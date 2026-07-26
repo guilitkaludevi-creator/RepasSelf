@@ -97,6 +97,18 @@
   .pdf-viewer { width:100%; height:65vh; min-height:400px; border-radius:14px; border:1px solid rgba(255,255,255,0.7); background:white; }
   .sync-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-right:5px; animation:pulse-dot 2s infinite; }
   @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
+  @keyframes floatBlob { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(30px,-50px) scale(1.1);} 66%{transform:translate(-20px,20px) scale(0.9);} }
+  .lg-blob { animation:floatBlob 20s ease-in-out infinite alternate; }
+  .lg-blob.b2 { animation-duration: 25s; animation-direction: alternate-reverse; }
+  .lg-blob.b3 { animation-duration: 22s; animation-delay: -5s; }
+  @keyframes fadeInRow { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .lg-table tbody tr { animation:fadeInRow 0.3s ease-out forwards; }
+  
+  /* Touch optimizations & smooth active states */
+  .lg-btn, .lg-tab, .lg-day-chip, .allergene-chip, .lg-arrow { touch-action: manipulation; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s; }
+  .lg-btn:active { transform: scale(0.96); opacity: 0.9; }
+  .lg-tab:active, .lg-day-chip:active, .allergene-chip:active { transform: scale(0.94); }
+  .lg-arrow:active { transform: scale(0.85); background: rgba(255,255,255,0.9); }
   @media (max-width:600px) {
     .lg-form-grid { grid-template-columns:1fr; }
     .lg-stats { grid-template-columns:repeat(2,1fr); }
@@ -159,9 +171,25 @@
                 <option value="">-- Choisir --</option>
                 <option>Standard</option><option>Sans porc</option><option>Végétarien</option><option>Autre</option>
               </select></div>
-            <div class="lg-field" id="autre-regime-field" style="display:none;"><label>Précision</label><input type="text" class="lg-input" id="autre-regime" placeholder="Sans gluten..." /></div>
-            <div class="lg-field"><label>Service / Chambre</label><input type="text" class="lg-input" id="service" placeholder="Ch. 214" /></div>
-            <div class="lg-field"><label>Observations</label><input type="text" class="lg-input" id="observations" placeholder="Note cuisine" /></div>
+            <div class="lg-field" id="autre-regime-field" style="display:none;"><label>Précision (Régime)</label><input type="text" class="lg-input" id="autre-regime" placeholder="Sans gluten..." /></div>
+            
+            <div class="lg-field"><label>Texture <span class="req">*</span></label>
+              <select class="lg-select" id="texture" required>
+                <option value="Normale">Normale</option>
+                <option value="Haché">Haché</option>
+                <option value="Mixé">Mixé</option>
+                <option value="Lisse">Lisse / Liquide</option>
+              </select></div>
+              
+            <div class="lg-field"><label>Lieu <span class="req">*</span></label>
+              <select class="lg-select" id="lieu" required>
+                <option value="Salle à manger">Salle à manger</option>
+                <option value="En chambre">En chambre</option>
+                <option value="Autre">Autre (préciser)</option>
+              </select></div>
+              
+            <div class="lg-field"><label>Service / Précision lieu</label><input type="text" class="lg-input" id="service" placeholder="Ch. 214, Unité..." /></div>
+            <div class="lg-field"><label>Observations</label><input type="text" class="lg-input" id="observations" placeholder="Note pour la cuisine" /></div>
           </div>
           <div class="lg-field" style="margin-top:12px;">
             <label>⚠️ Allergènes</label>
@@ -536,6 +564,8 @@
       categorie:document.getElementById('categorie').value,
       regime:regimeVal,
       regimeDetail:regimeVal==='Autre'?document.getElementById('autre-regime').value.trim():'',
+      texture:document.getElementById('texture').value,
+      lieu:document.getElementById('lieu').value,
       service:document.getElementById('service').value.trim(),
       observations:document.getElementById('observations').value.trim(),
       allergenes:[...formAllergenes],
@@ -591,7 +621,7 @@
     filtered.sort((a,b)=>(a.date+a.typeRepas).localeCompare(b.date+b.typeRepas));
     const bReg={'Standard':'b-standard','Sans porc':'b-sansporc','Végétarien':'b-vege','Autre':'b-autre'};
     const bCat={'Salarié':'b-salarie','Invité':'b-invite','Résident':'b-resident','Famille':'b-famille'};
-    let html='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>Nom</th><th>Cat</th><th>Régime</th><th>Allerg.</th><th></th></tr></thead><tbody>';
+    let html='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>Nom</th><th>Cat/Lieu</th><th>Rég./Tex.</th><th>Allerg.</th><th></th></tr></thead><tbody>';
     filtered.forEach(r=>{
       const d=new Date(r.date+'T00:00:00');
       const alg=(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k); return a?a.e:'';}).join(' ');
@@ -599,8 +629,14 @@
       html+=`<tr>
         <td><strong>${dayNames[(d.getDay()+6)%7]}</strong> ${d.getDate()}/${d.getMonth()+1}</td>
         <td>${r.typeRepas}</td><td><strong>${r.nom}</strong> ${r.prenom}</td>
-        <td><span class="lg-badge ${bCat[r.categorie]||''}">${r.categorie}</span></td>
-        <td><span class="lg-badge ${bReg[r.regime]||''}">${r.regime}${r.regimeDetail?' · '+r.regimeDetail:''}</span></td>
+        <td>
+          <span class="lg-badge ${bCat[r.categorie]||''}">${r.categorie}</span><br>
+          <span style="font-size:10px;color:#6b21a8;margin-top:2px;display:inline-block;">${r.lieu||'Salle'}${r.service?' ('+r.service+')':''}</span>
+        </td>
+        <td>
+          <span class="lg-badge ${bReg[r.regime]||''}">${r.regime}${r.regimeDetail?' · '+r.regimeDetail:''}</span><br>
+          <span style="font-size:10px;font-weight:600;color:#9f1239;margin-top:2px;display:inline-block;">${r.texture&&r.texture!=='Normale'?r.texture:''}</span>
+        </td>
         <td>${alg||'-'}</td>
         <td><button class="lg-btn lg-btn-danger" onclick="window.__delR('${r.firestoreId}')">✕</button></td>
       </tr>`;
@@ -679,11 +715,12 @@
     const allRows=data.map(r=>({
       'Date':fmtFR(r.date),'Type repas':r.typeRepas,'Nom':r.nom,'Prénom':r.prenom,
       'Catégorie':r.categorie,'Régime':r.regime,'Précision':r.regimeDetail||'',
-      'Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', '),
-      'Service':r.service||'','Observations':r.observations||''
+      'Texture':r.texture||'Normale','Lieu':r.lieu||'Salle à manger',
+      'Service':r.service||'','Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', '),
+      'Observations':r.observations||''
     }));
     const wsAll=XLSX.utils.json_to_sheet(allRows);
-    wsAll['!cols']=[{wch:12},{wch:14},{wch:15},{wch:15},{wch:12},{wch:13},{wch:18},{wch:22},{wch:15},{wch:22}];
+    wsAll['!cols']=[{wch:12},{wch:14},{wch:15},{wch:15},{wch:12},{wch:13},{wch:15},{wch:10},{wch:15},{wch:15},{wch:22},{wch:22}];
     XLSX.utils.book_append_sheet(wb,wsAll,'Toutes réservations');
     const algData=data.filter(r=>(r.allergenes||[]).length>0);
     if(algData.length>0){
@@ -702,11 +739,12 @@
       const rows=byDate[date].map(r=>({
         'Repas':r.typeRepas,'Nom':r.nom,'Prénom':r.prenom,'Catégorie':r.categorie,
         'Régime':r.regime+(r.regimeDetail?' ('+r.regimeDetail+')':''),
-        'Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', '),
-        'Service':r.service||'','Observations':r.observations||''
+        'Texture':r.texture||'Normale', 'Lieu':r.lieu||'Salle à manger',
+        'Service':r.service||'','Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', '),
+        'Observations':r.observations||''
       }));
       const ws=XLSX.utils.json_to_sheet(rows);
-      ws['!cols']=[{wch:14},{wch:15},{wch:15},{wch:12},{wch:20},{wch:22},{wch:15},{wch:22}];
+      ws['!cols']=[{wch:14},{wch:15},{wch:15},{wch:12},{wch:20},{wch:10},{wch:15},{wch:15},{wch:22},{wch:22}];
       XLSX.utils.book_append_sheet(wb,ws,`${dayNames[(d.getDay()+6)%7]} ${d.getDate()}-${d.getMonth()+1}`.substring(0,31));
     });
     return wb;
@@ -724,11 +762,11 @@
     const mon=fmt(currentWeekMonday), sun=fmt(addDays(currentWeekMonday,6));
     const data=reservations.filter(r=>r.date>=mon && r.date<=sun);
     if(data.length===0){ toast('Aucune donnée',true); return; }
-    const headers=['Date','Type repas','Nom','Prénom','Catégorie','Régime','Précision','Allergènes','Service','Observations'];
+    const headers=['Date','Type repas','Nom','Prénom','Catégorie','Régime','Précision','Texture','Lieu','Service','Allergènes','Observations'];
     const rows=data.map(r=>[
-      fmtFR(r.date),r.typeRepas,r.nom,r.prenom,r.categorie,r.regime,r.regimeDetail||'',
+      fmtFR(r.date),r.typeRepas,r.nom,r.prenom,r.categorie,r.regime,r.regimeDetail||'',r.texture||'Normale',r.lieu||'Salle à manger',r.service||'',
       (r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join('|'),
-      r.service||'',(r.observations||'').replace(/[\n;]/g,' ')
+      (r.observations||'').replace(/[\n;]/g,' ')
     ]);
     const csv='\uFEFF'+[headers,...rows].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
     const iso=getISOWeek(currentWeekMonday);
