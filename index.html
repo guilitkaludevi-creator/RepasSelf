@@ -9,24 +9,21 @@
 <meta name="apple-mobile-web-app-title" content="Résa Repas" />
 <title>Résa Repas — Centre de Santé</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode"></script>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
   body {
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 15% 10%, #ff9ec7 0%, transparent 40%),
-      radial-gradient(circle at 85% 20%, #a78bfa 0%, transparent 45%),
-      radial-gradient(circle at 50% 90%, #60a5fa 0%, transparent 50%),
-      radial-gradient(circle at 90% 80%, #fbbf24 0%, transparent 40%),
-      linear-gradient(135deg, #fef3ff 0%, #e0f2fe 50%, #fef9c3 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 50%, #f3e8ff 100%);
     background-attachment: fixed;
   }
   .lg-app { position:relative; max-width:758px; margin:0 auto; padding:16px 14px 40px; color:#1a1a2e; font-size:15px; overflow:hidden; }
-  .lg-blob { position:fixed; border-radius:50%; filter:blur(50px); opacity:0.45; pointer-events:none; z-index:0; }
-  .lg-blob.b1 { width:220px; height:220px; background:#ec4899; top:-60px; right:-60px; }
-  .lg-blob.b2 { width:280px; height:280px; background:#8b5cf6; bottom:80px; left:-100px; }
-  .lg-blob.b3 { width:200px; height:200px; background:#06b6d4; top:40%; right:-80px; }
+  .lg-blob { position:fixed; border-radius:50%; filter:blur(40px); opacity:0.75; pointer-events:none; z-index:0; }
+  .lg-blob.b1 { width:280px; height:280px; background:#ec4899; top:-40px; right:-40px; }
+  .lg-blob.b2 { width:320px; height:320px; background:#8b5cf6; bottom:50px; left:-80px; }
+  .lg-blob.b3 { width:240px; height:240px; background:#06b6d4; top:35%; right:-60px; }
   .lg-content { position:relative; z-index:1; }
   .lg-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:14px 18px;
     background:rgba(255,255,255,0.4); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
@@ -103,6 +100,13 @@
   .lg-blob.b3 { animation-duration: 22s; animation-delay: -5s; }
   @keyframes fadeInRow { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
   .lg-table tbody tr { animation:fadeInRow 0.3s ease-out forwards; }
+  .star-rating { display:flex; flex-direction:row-reverse; justify-content:center; gap:8px; font-size:36px; cursor:pointer; }
+  .star-rating input { display:none; }
+  .star-rating label { color:#d1d5db; transition:all 0.2s; text-shadow:0 2px 10px rgba(0,0,0,0.1); }
+  .star-rating input:checked ~ label, .star-rating label:hover, .star-rating label:hover ~ label { color:#fbbf24; transform:scale(1.1); }
+  #qr-container { display:flex; justify-content:center; align-items:center; margin:20px 0; padding:20px; background:white; border-radius:16px; border:4px solid #8b5cf6; }
+  .res-list-item { padding:12px 14px; margin-bottom:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.7); background:rgba(255,255,255,0.6); display:flex; justify-content:space-between; align-items:center; transition:all 0.2s; box-shadow:0 2px 8px rgba(139,92,246,0.05); }
+  .res-list-item.valid { border-color:#10b981; background:rgba(16,185,129,0.15); }
   
   /* Touch optimizations & smooth active states */
   .lg-btn, .lg-tab, .lg-day-chip, .allergene-chip, .lg-arrow { touch-action: manipulation; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s; }
@@ -137,6 +141,10 @@
     <div class="lg-tabs">
       <button class="lg-tab active" data-tab="reserver">➕ Réserver</button>
       <button class="lg-tab" data-tab="semaine">📅 Semaine</button>
+      <button class="lg-tab" data-tab="cuisine">🧑‍🍳 Cuisine</button>
+      <button class="lg-tab" data-tab="scanner">📱 Scan</button>
+      <button class="lg-tab" data-tab="avis">⭐ Avis</button>
+      <button class="lg-tab" data-tab="stats">📈 Stats</button>
       <button class="lg-tab" data-tab="menu">🍽️ Menu</button>
       <button class="lg-tab" data-tab="allergene">⚠️ Allergènes</button>
       <button class="lg-tab" data-tab="export">📊 Export</button>
@@ -223,6 +231,89 @@
           <div class="lg-field"><label>Recherche</label><input type="text" class="lg-input" id="f-nom" placeholder="Nom" /></div>
         </div>
         <div id="table-container"></div>
+      </div>
+    </div>
+
+    <div id="tab-cuisine" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">🧑‍🍳 Affichage Cuisine</h3>
+        <div class="lg-info">Placez cette tablette en vue pour que les éducateurs/résidents puissent scanner le QR Code et valider leur repas.</div>
+        <div class="lg-form-grid" style="margin-bottom:16px;">
+          <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="qr-date" /></div>
+          <div class="lg-field"><label>Repas en cours</label>
+            <select class="lg-select" id="qr-repas">
+              <option>Petit-déjeuner</option><option selected>Déjeuner</option><option>Dîner</option><option>Collation</option>
+            </select>
+          </div>
+        </div>
+        <div id="qr-container"></div>
+        <div style="text-align:center;font-weight:700;color:#6b21a8;font-size:18px;" id="qr-label"></div>
+      </div>
+    </div>
+
+    <div id="tab-scanner" class="tab-content hidden">
+      <div class="lg-card" id="scan-view">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">📱 Scanner le repas</h3>
+        <div class="lg-info">Visez le QR Code affiché en cuisine (ou sur un ticket) pour démarrer la validation des repas.</div>
+        <div id="reader" style="width:100%; border-radius:14px; overflow:hidden; border:2px solid rgba(139,92,246,0.3); background:rgba(0,0,0,0.05); min-height:200px;"></div>
+        <button class="lg-btn lg-btn-primary" style="width:100%; margin-top:12px;" onclick="startScanner()">📷 Activer la caméra</button>
+      </div>
+      
+      <div class="lg-card hidden" id="validation-view">
+        <h3 style="margin:0 0 12px; color:#10b981;" id="val-title">✅ Repas détecté</h3>
+        <div class="lg-info">Recherchez la personne dans la liste des réservations pour ce repas afin de valider son plateau.</div>
+        <div class="lg-field"><label>🔍 Rechercher un nom</label><input type="text" class="lg-input" id="val-search" placeholder="Nom ou Prénom..." oninput="renderValidationList()" /></div>
+        <div id="val-list" style="margin-top:12px; max-height:45vh; overflow-y:auto; padding-right:5px;"></div>
+        <button class="lg-btn lg-btn-glass" style="width:100%; margin-top:16px;" onclick="stopScanner()">« Retour à la caméra</button>
+      </div>
+    </div>
+
+    <div id="tab-avis" class="tab-content hidden">
+      <div class="lg-card" id="avis-list-view">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">⭐ Évaluer un repas</h3>
+        <div class="lg-info">Sélectionnez un repas déjà validé (Pris) pour laisser votre avis à posteriori.</div>
+        <div class="lg-form-grid" style="margin-bottom:16px;">
+          <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="avis-date" /></div>
+          <div class="lg-field"><label>Repas évalué</label>
+            <select class="lg-select" id="avis-repas">
+              <option>Petit-déjeuner</option><option selected>Déjeuner</option><option>Dîner</option><option>Collation</option>
+            </select>
+          </div>
+        </div>
+        <div id="avis-list" style="margin-top:12px; max-height:45vh; overflow-y:auto; padding-right:5px;"></div>
+      </div>
+      
+      <div class="lg-card hidden" id="feedback-view">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">⭐ Votre avis</h3>
+        <button class="lg-btn lg-btn-glass" style="margin-bottom:12px; padding:6px 12px; font-size:12px;" onclick="closeFeedback()">« Retour à la liste</button>
+        <div class="lg-info" id="feedback-subtitle"></div>
+        <div style="background:rgba(255,255,255,0.7); border-radius:16px; padding:20px 10px; margin:16px 0;">
+          <div class="star-rating" id="star-rating-ui">
+            <input type="radio" name="rating" id="star5" value="5"><label for="star5">★</label>
+            <input type="radio" name="rating" id="star4" value="4"><label for="star4">★</label>
+            <input type="radio" name="rating" id="star3" value="3"><label for="star3">★</label>
+            <input type="radio" name="rating" id="star2" value="2"><label for="star2">★</label>
+            <input type="radio" name="rating" id="star1" value="1"><label for="star1">★</label>
+          </div>
+        </div>
+        <div class="lg-field"><label>Commentaire de l'éducateur / du résident (Optionnel)</label><textarea class="lg-textarea" id="feedback-comment" rows="3" placeholder="Tout s'est bien passé..."></textarea></div>
+        <div class="lg-btn-row" style="margin-top:16px;">
+          <button class="lg-btn lg-btn-primary" style="flex:2;" onclick="submitFeedback()">Envoyer l'avis</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tab-stats" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">📈 Statistiques et Consommation</h3>
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-6">—</div><div class="lg-week-range" id="wk-range-6">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-info">Tableau de bord de suivi : comparaison entre les réservations effectuées et les repas réellement consommés.</div>
+        <div class="lg-stats" id="stats-dashboard"></div>
+        <div id="stats-details" style="margin-top:16px;"></div>
       </div>
     </div>
 
@@ -354,11 +445,17 @@
 (function(){
   const LS_MENU_KEY = 'resaRepas_menus_v1';
   let reservations = [];
+  let feedbacks = [];
   let menusByWeek = {};
   let currentWeekMonday = getMondayOf(new Date());
   let selectedDays = new Set();
   let formAllergenes = new Set();
   let syncActive = false;
+  
+  let html5QrcodeScanner = null;
+  let currentScanData = null;
+  let currentValId = null;
+  let qrcode = null;
 
   const ALLERGENES = [
     {k:'gluten',l:'Gluten',e:'🌾'},{k:'lactose',l:'Lactose',e:'🥛'},
@@ -404,6 +501,9 @@
         renderDaysGrid();
         refreshList();
         renderAllergeneSummary();
+        if(document.getElementById('tab-scanner').classList.contains('hidden') === false && currentScanData) renderValidationList();
+        if(document.getElementById('tab-avis').classList.contains('hidden') === false) renderAvisList();
+        renderStats();
         updateStorageInfo();
       }, error => {
         console.error('Erreur Firestore :', error);
@@ -418,6 +518,13 @@
           toast('⚠️ Erreur de synchronisation Firebase', true);
         }
       });
+      
+    // Écoute des avis
+    db.collection('feedbacks').onSnapshot(snapshot => {
+      feedbacks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      if(document.getElementById('tab-avis').classList.contains('hidden') === false) renderAvisList();
+      renderStats();
+    }, err => console.error("Erreur lecture feedbacks", err));
   }
 
   function updateSyncStatus(isOnline, hasPendingWrites, customMsg) {
@@ -462,11 +569,11 @@
     const iso=getISOWeek(mon);
     const rangeStr=`${mon.getDate()} ${monthNames[mon.getMonth()]} → ${sun.getDate()} ${monthNames[sun.getMonth()]} ${sun.getFullYear()}`;
     const numStr=`Semaine ${iso.week} · ${iso.year}`;
-    ['wk-num','wk-num-2','wk-num-3','wk-num-4','wk-num-5'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=numStr;});
-    ['wk-range','wk-range-2','wk-range-3','wk-range-4','wk-range-5'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=rangeStr;});
+    ['wk-num','wk-num-2','wk-num-3','wk-num-4','wk-num-5','wk-num-6'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=numStr;});
+    ['wk-range','wk-range-2','wk-range-3','wk-range-4','wk-range-5','wk-range-6'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=rangeStr;});
     const h=document.getElementById('header-week');
     if(h)h.innerHTML=`Sem. ${iso.week}<br><span style="font-weight:500;font-size:10px;">${mon.getDate()}/${mon.getMonth()+1} → ${sun.getDate()}/${sun.getMonth()+1}</span>`;
-    renderDaysGrid(); refreshList(); renderMenuViewer(); renderAllergeneSummary();
+    renderDaysGrid(); refreshList(); renderMenuViewer(); renderAllergeneSummary(); renderStats();
   }
 
   function renderDaysGrid() {
@@ -537,6 +644,8 @@
       document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
       btn.classList.add('active');
       document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
+      if(btn.dataset.tab === 'cuisine') updateQRCode();
+      if(btn.dataset.tab === 'avis') renderAvisList();
       renderWeekPickers();
     });
   });
@@ -621,7 +730,7 @@
     filtered.sort((a,b)=>(a.date+a.typeRepas).localeCompare(b.date+b.typeRepas));
     const bReg={'Standard':'b-standard','Sans porc':'b-sansporc','Végétarien':'b-vege','Autre':'b-autre'};
     const bCat={'Salarié':'b-salarie','Invité':'b-invite','Résident':'b-resident','Famille':'b-famille'};
-    let html='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>Nom</th><th>Cat/Lieu</th><th>Rég./Tex.</th><th>Allerg.</th><th></th></tr></thead><tbody>';
+    let html='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>Nom</th><th>Cat/Lieu</th><th>Rég./Tex.</th><th>État</th><th>Allerg.</th><th></th></tr></thead><tbody>';
     filtered.forEach(r=>{
       const d=new Date(r.date+'T00:00:00');
       const alg=(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k); return a?a.e:'';}).join(' ');
@@ -637,6 +746,7 @@
           <span class="lg-badge ${bReg[r.regime]||''}">${r.regime}${r.regimeDetail?' · '+r.regimeDetail:''}</span><br>
           <span style="font-size:10px;font-weight:600;color:#9f1239;margin-top:2px;display:inline-block;">${r.texture&&r.texture!=='Normale'?r.texture:''}</span>
         </td>
+        <td><span class="lg-badge ${r.status==='pris'?'b-vege':'b-standard'}">${r.status==='pris'?'✅ Pris':'Commandé'}</span></td>
         <td>${alg||'-'}</td>
         <td><button class="lg-btn lg-btn-danger" onclick="window.__delR('${r.firestoreId}')">✕</button></td>
       </tr>`;
@@ -693,6 +803,196 @@
     const m=menusByWeek[key]; if(!m)return;
     const a=document.createElement('a');
     a.href=m.dataUrl; a.download=m.name; a.click();
+  };
+
+  /* ── CUISINE (GÉNÉRATEUR QR) ── */
+  window.updateQRCode = function() {
+    const d = document.getElementById('qr-date').value || fmt(new Date());
+    if(!document.getElementById('qr-date').value) document.getElementById('qr-date').value = d;
+    const r = document.getElementById('qr-repas').value;
+    const payload = `RESAMED|${d}|${r}`;
+    document.getElementById('qr-label').innerHTML = `${fmtFR(d)} <br> <span style="font-size:24px;color:#ec4899;">${r}</span>`;
+    
+    if(qrcode) {
+      qrcode.clear(); qrcode.makeCode(payload);
+    } else {
+      const container = document.getElementById("qr-container");
+      if(container && typeof QRCode !== 'undefined') {
+        qrcode = new QRCode(container, { text: payload, width: 280, height: 280, colorDark: "#6b21a8", colorLight: "#ffffff", correctLevel : QRCode.CorrectLevel.H });
+      }
+    }
+  };
+  document.getElementById('qr-date')?.addEventListener('change', updateQRCode);
+  document.getElementById('qr-repas')?.addEventListener('change', updateQRCode);
+
+  /* ── SCANNER & VALIDATION ── */
+  window.startScanner = function() {
+    if(html5QrcodeScanner) return;
+    try {
+      html5QrcodeScanner = new Html5Qrcode("reader");
+      html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess)
+        .catch(err => toast("Erreur d'accès à la caméra.", true));
+    } catch(e) { toast("La caméra n'est pas supportée sur ce navigateur.", true); }
+  };
+  window.stopScanner = function() {
+    if(html5QrcodeScanner) {
+      html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }).catch(e=>console.warn(e));
+    }
+    document.getElementById('scan-view').classList.remove('hidden');
+    document.getElementById('validation-view').classList.add('hidden');
+    document.getElementById('val-search').value = '';
+  };
+  function onScanSuccess(decodedText) {
+    if(decodedText.startsWith("RESAMED|")) {
+      const parts = decodedText.split('|');
+      currentScanData = { date: parts[1], repas: parts[2] };
+      stopScanner(); // stop camera
+      document.getElementById('scan-view').classList.add('hidden');
+      document.getElementById('validation-view').classList.remove('hidden');
+      document.getElementById('val-title').innerHTML = `✅ ${currentScanData.repas} du ${fmtFR(currentScanData.date)}`;
+      renderValidationList();
+      toast('✅ Code scanné avec succès');
+    } else {
+      toast('⚠️ Code invalide', true);
+    }
+  }
+  window.renderValidationList = function() {
+    const q = document.getElementById('val-search').value.toLowerCase();
+    const list = document.getElementById('val-list');
+    if(!currentScanData) return;
+    const res = reservations.filter(r => r.date === currentScanData.date && r.typeRepas === currentScanData.repas);
+    if(res.length === 0) { list.innerHTML = '<div class="lg-empty">Aucune réservation pour ce repas.</div>'; return; }
+    
+    let html = '';
+    let count = 0;
+    res.forEach(r => {
+      if(q && !(r.nom.toLowerCase().includes(q) || r.prenom.toLowerCase().includes(q))) return;
+      count++;
+      const isPris = r.status === 'pris';
+      html += `<div class="res-list-item ${isPris ? 'valid' : ''}">
+        <div><strong>${r.nom}</strong> ${r.prenom}<br><span style="font-size:11px;color:#6b21a8;font-weight:600;">${r.categorie} ${r.lieu?'· '+r.lieu:''}</span></div>
+        <button class="lg-btn ${isPris ? 'lg-btn-glass' : 'lg-btn-primary'}" style="min-height:36px;padding:8px 12px;font-size:12px;" ${isPris ? 'disabled' : `onclick="validateMeal('${r.firestoreId}')"`}>
+          ${isPris ? '✓ Validé' : 'Valider >'}
+        </button>
+      </div>`;
+    });
+    list.innerHTML = html || '<div class="lg-empty">Aucun nom ne correspond.</div>';
+  };
+  window.validateMeal = function(id) {
+    db.collection('reservations').doc(id).update({ status: 'pris', valideLe: new Date().toISOString() })
+      .then(() => {
+        toast('Repas validé !');
+        // Re-render list to show it as Validated, but don't navigate away
+      }).catch(err => toast('Erreur validation', true));
+  };
+  
+  /* ── ÉVALUATION A POSTERIORI ── */
+  window.renderAvisList = function() {
+    const d = document.getElementById('avis-date').value || fmt(new Date());
+    if(!document.getElementById('avis-date').value) document.getElementById('avis-date').value = d;
+    const r = document.getElementById('avis-repas').value;
+    const list = document.getElementById('avis-list');
+    
+    const res = reservations.filter(x => x.date === d && x.typeRepas === r && x.status === 'pris');
+    if(res.length === 0) { list.innerHTML = '<div class="lg-empty">Aucun repas validé pour cette date.</div>'; return; }
+    
+    let html = '';
+    res.forEach(x => {
+      const hasReview = feedbacks.some(f => f.reservationId === x.firestoreId);
+      html += `<div class="res-list-item ${hasReview ? 'valid' : ''}">
+        <div><strong>${x.nom}</strong> ${x.prenom}<br><span style="font-size:11px;color:#6b21a8;font-weight:600;">${hasReview ? '⭐ Avis donné' : 'À évaluer'}</span></div>
+        <button class="lg-btn ${hasReview ? 'lg-btn-glass' : 'lg-btn-primary'}" style="min-height:36px;padding:8px 12px;font-size:12px;" ${hasReview ? 'disabled' : `onclick="openFeedback('${x.firestoreId}')"`}>
+          ${hasReview ? '✓ Noté' : 'Noter >'}
+        </button>
+      </div>`;
+    });
+    list.innerHTML = html;
+  };
+  
+  document.getElementById('avis-date')?.addEventListener('change', renderAvisList);
+  document.getElementById('avis-repas')?.addEventListener('change', renderAvisList);
+
+  window.openFeedback = function(id) {
+    const r = reservations.find(x => x.firestoreId === id);
+    currentValId = id;
+    document.getElementById('avis-list-view').classList.add('hidden');
+    document.getElementById('feedback-view').classList.remove('hidden');
+    document.getElementById('feedback-subtitle').innerHTML = `Notez le repas de <strong>${r.nom} ${r.prenom}</strong>`;
+    document.querySelectorAll('input[name="rating"]').forEach(el=>el.checked=false);
+    document.getElementById('feedback-comment').value = '';
+  };
+  
+  window.closeFeedback = function() {
+    document.getElementById('feedback-view').classList.add('hidden');
+    document.getElementById('avis-list-view').classList.remove('hidden');
+    renderAvisList();
+  };
+
+  window.submitFeedback = function() {
+    const ratingEl = document.querySelector('input[name="rating"]:checked');
+    if(!ratingEl) { toast('Veuillez sélectionner une note (étoile)', true); return; }
+    const r = reservations.find(x => x.firestoreId === currentValId);
+    const fb = {
+      date: r.date,
+      typeRepas: r.typeRepas,
+      note: parseInt(ratingEl.value),
+      commentaire: document.getElementById('feedback-comment').value.trim(),
+      reservationId: currentValId,
+      createdAt: new Date().toISOString()
+    };
+    db.collection('feedbacks').add(fb).then(() => {
+      toast('Avis enregistré !');
+      closeFeedback();
+    }).catch(err => toast('Erreur envoi avis', true));
+  };
+
+  /* ── STATS & DASHBOARD ── */
+  window.renderStats = function() {
+    const dash = document.getElementById('stats-dashboard');
+    const details = document.getElementById('stats-details');
+    if(!dash || !details) return;
+    
+    const mon = fmt(currentWeekMonday), sun = fmt(addDays(currentWeekMonday, 6));
+    const weekRes = reservations.filter(r => r.date >= mon && r.date <= sun);
+    const cmd = weekRes.length;
+    const pris = weekRes.filter(r => r.status === 'pris').length;
+    
+    const weekFb = feedbacks.filter(f => f.date >= mon && f.date <= sun);
+    const avg = weekFb.length ? (weekFb.reduce((a,b)=>a+b.note,0)/weekFb.length).toFixed(1) : '-';
+
+    dash.innerHTML = `
+      <div class="lg-stat"><div class="lg-stat-val">${cmd}</div><div class="lg-stat-lbl">Commandés</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#10b981;">${pris}</div><div class="lg-stat-lbl">Pris / Validés</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#ec4899;">${Math.round(pris/cmd*100)||0}%</div><div class="lg-stat-lbl">Présence</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#fbbf24;">⭐ ${avg}</div><div class="lg-stat-lbl">${weekFb.length} avis</div></div>
+    `;
+
+    if(weekRes.length === 0) { details.innerHTML = '<div class="lg-empty">Aucune donnée pour cette semaine.</div>'; return; }
+
+    let html = '<div class="lg-table-wrap"><table class="lg-table" style="text-align:center;"><thead><tr><th style="text-align:left;">Jour & Repas</th><th>Cmd</th><th>Pris</th><th>Écart</th><th>Note Moy.</th></tr></thead><tbody>';
+    const byDayRepas = {};
+    weekRes.forEach(r => {
+      const k = r.date+'|'+r.typeRepas;
+      if(!byDayRepas[k]) byDayRepas[k] = { d:r.date, r:r.typeRepas, c:0, p:0 };
+      byDayRepas[k].c++;
+      if(r.status==='pris') byDayRepas[k].p++;
+    });
+    
+    Object.values(byDayRepas).sort((a,b)=>(a.d+a.r).localeCompare(b.d+b.r)).forEach(row => {
+      const fb = feedbacks.filter(f => f.date === row.d && f.typeRepas === row.r);
+      const rowAvg = fb.length ? (fb.reduce((a,b)=>a+b.note,0)/fb.length).toFixed(1) : '-';
+      const dObj = new Date(row.d+'T00:00:00');
+      const ecart = row.c - row.p;
+      html += `<tr>
+        <td style="text-align:left;"><strong>${dayNames[(dObj.getDay()+6)%7]}</strong> ${dObj.getDate()}/${dObj.getMonth()+1}<br><span style="font-size:10px;color:#6b21a8;">${row.r}</span></td>
+        <td>${row.c}</td>
+        <td style="color:#10b981;font-weight:700;">${row.p}</td>
+        <td style="color:${ecart>0?'#f43f5e':'#10b981'};font-weight:600;">${ecart}</td>
+        <td style="color:#fbbf24;font-weight:700;font-size:14px;">${rowAvg==='-'?'-':'★ '+rowAvg}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    details.innerHTML = html;
   };
 
   /* ── Export Excel ── */
