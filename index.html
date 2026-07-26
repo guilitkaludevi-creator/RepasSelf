@@ -140,6 +140,7 @@
     <div class="lg-tabs">
       <button class="lg-tab active" data-tab="reserver">➕ Réserver</button>
       <button class="lg-tab" data-tab="semaine">📅 Semaine</button>
+      <button class="lg-tab" data-tab="cuisine">🧑‍🍳 Cuisine</button>
       <button class="lg-tab" data-tab="pointage">✔️ Pointage</button>
       <button class="lg-tab" data-tab="avis">⭐ Avis</button>
       <button class="lg-tab" data-tab="stats">📈 Stats</button>
@@ -229,6 +230,27 @@
           <div class="lg-field"><label>Recherche</label><input type="text" class="lg-input" id="f-nom" placeholder="Nom" /></div>
         </div>
         <div id="table-container"></div>
+      </div>
+    </div>
+
+    <div id="tab-cuisine" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">🧑‍🍳 Suivi Cuisine (Temps Réel)</h3>
+        <div class="lg-info">Écran destiné à la cuisine pour suivre l'avancée du service en direct. Mise à jour automatique.</div>
+        <div class="lg-form-grid" style="margin-bottom:16px;">
+          <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="live-date" /></div>
+          <div class="lg-field"><label>Repas en cours</label>
+            <select class="lg-select" id="live-repas">
+              <option>Petit-déjeuner</option><option selected>Déjeuner</option><option>Dîner</option><option>Collation</option>
+            </select>
+          </div>
+        </div>
+        <div class="lg-stats" id="live-dashboard"></div>
+        <div id="live-progress" style="margin:16px 0;"></div>
+        <div>
+          <h4 style="margin:0 0 10px; color:#9f1239;">⏳ Restant à servir</h4>
+          <div id="live-waiting-list" style="max-height:30vh; overflow-y:auto; padding-right:5px;"></div>
+        </div>
       </div>
     </div>
 
@@ -480,6 +502,7 @@
         refreshList();
         renderAllergeneSummary();
         if(document.getElementById('tab-pointage').classList.contains('hidden') === false) renderPointageList();
+        if(document.getElementById('tab-cuisine').classList.contains('hidden') === false) renderCuisineLive();
         if(document.getElementById('tab-avis').classList.contains('hidden') === false) renderAvisList();
         renderStats();
         updateStorageInfo();
@@ -623,6 +646,7 @@
       btn.classList.add('active');
       document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
       if(btn.dataset.tab === 'pointage') renderPointageList();
+      if(btn.dataset.tab === 'cuisine') renderCuisineLive();
       if(btn.dataset.tab === 'avis') renderAvisList();
       renderWeekPickers();
     });
@@ -818,6 +842,49 @@
       .catch(err => toast('Erreur validation', true));
   };
   
+  /* ── CUISINE (SUIVI LIVE) ── */
+  window.renderCuisineLive = function() {
+    const d = document.getElementById('live-date').value || fmt(new Date());
+    if(!document.getElementById('live-date').value) document.getElementById('live-date').value = d;
+    const r = document.getElementById('live-repas').value;
+    
+    const res = reservations.filter(x => x.date === d && x.typeRepas === r);
+    const cmd = res.length;
+    const pris = res.filter(x => x.status === 'pris').length;
+    const reste = cmd - pris;
+    const pct = cmd > 0 ? Math.round((pris / cmd) * 100) : 0;
+    
+    document.getElementById('live-dashboard').innerHTML = `
+      <div class="lg-stat"><div class="lg-stat-val">${cmd}</div><div class="lg-stat-lbl">Prévus</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#10b981;">${pris}</div><div class="lg-stat-lbl">Servis</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#f43f5e;">${reste}</div><div class="lg-stat-lbl">En attente</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#6b21a8;">${pct}%</div><div class="lg-stat-lbl">Avancée</div></div>
+    `;
+    
+    document.getElementById('live-progress').innerHTML = `<div style="width:100%; height:12px; background:rgba(0,0,0,0.1); border-radius:6px; overflow:hidden;">
+      <div style="width:${pct}%; height:100%; background:linear-gradient(90deg, #8b5cf6, #10b981); transition:width 0.5s;"></div>
+    </div>`;
+    
+    const attente = res.filter(x => x.status !== 'pris');
+    let html = '';
+    if(attente.length === 0 && cmd > 0) {
+      html = '<div class="lg-empty" style="color:#10b981; font-weight:bold;">🎉 Service terminé ! Tous les repas ont été pris.</div>';
+    } else if (cmd === 0) {
+      html = '<div class="lg-empty">Aucune réservation pour ce service.</div>';
+    } else {
+      attente.forEach(x => {
+        html += `<div class="res-list-item" style="border-left:4px solid #f43f5e;">
+          <div><strong>${x.nom}</strong> ${x.prenom}</div>
+          <div style="font-size:11px;color:#6b21a8;font-weight:600;text-align:right;">${x.categorie}<br>${x.lieu||''}</div>
+        </div>`;
+      });
+    }
+    document.getElementById('live-waiting-list').innerHTML = html;
+  };
+  
+  document.getElementById('live-date')?.addEventListener('change', renderCuisineLive);
+  document.getElementById('live-repas')?.addEventListener('change', renderCuisineLive);
+
   /* ── ÉVALUATION A POSTERIORI ── */
   window.renderAvisList = function() {
     const d = document.getElementById('avis-date').value || fmt(new Date());
