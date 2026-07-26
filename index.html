@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#8b5cf6" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Résa Repas" />
+<title>Résa Repas — Centre de Santé</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 15% 10%, #ff9ec7 0%, transparent 40%),
+      radial-gradient(circle at 85% 20%, #a78bfa 0%, transparent 45%),
+      radial-gradient(circle at 50% 90%, #60a5fa 0%, transparent 50%),
+      radial-gradient(circle at 90% 80%, #fbbf24 0%, transparent 40%),
+      linear-gradient(135deg, #fef3ff 0%, #e0f2fe 50%, #fef9c3 100%);
+    background-attachment: fixed;
+  }
+  .lg-app { position:relative; max-width:758px; margin:0 auto; padding:16px 14px 40px; color:#1a1a2e; font-size:15px; overflow:hidden; }
+  .lg-blob { position:fixed; border-radius:50%; filter:blur(50px); opacity:0.45; pointer-events:none; z-index:0; }
+  .lg-blob.b1 { width:220px; height:220px; background:#ec4899; top:-60px; right:-60px; }
+  .lg-blob.b2 { width:280px; height:280px; background:#8b5cf6; bottom:80px; left:-100px; }
+  .lg-blob.b3 { width:200px; height:200px; background:#06b6d4; top:40%; right:-80px; }
+  .lg-content { position:relative; z-index:1; }
+  .lg-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding:14px 18px;
+    background:rgba(255,255,255,0.4); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border-radius:20px; border:1px solid rgba(255,255,255,0.6); box-shadow:0 8px 32px rgba(139,92,246,0.15), inset 0 1px 0 rgba(255,255,255,0.8); }
+  .lg-title { font-size:20px; font-weight:700; margin:0; background:linear-gradient(135deg,#ec4899,#8b5cf6,#3b82f6); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .lg-subtitle { font-size:11px; color:#6b21a8; margin-top:2px; font-weight:500; }
+  .lg-week-badge { padding:8px 12px; background:rgba(255,255,255,0.55); backdrop-filter:blur(10px); border-radius:12px; border:1px solid rgba(255,255,255,0.7); font-size:11px; font-weight:600; color:#7c3aed; text-align:right; }
+  .lg-tabs { display:flex; gap:4px; margin-bottom:16px; padding:6px; background:rgba(255,255,255,0.35); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
+    border-radius:16px; border:1px solid rgba(255,255,255,0.5); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7); overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .lg-tab { flex:1; min-width:80px; padding:10px 6px; border:none; background:transparent; color:#6b21a8; cursor:pointer; font-size:11px; font-weight:600; border-radius:12px; white-space:nowrap; transition:all 0.2s; min-height:40px; }
+  .lg-tab.active { background:linear-gradient(135deg,rgba(236,72,153,0.95),rgba(139,92,246,0.95)); color:white; box-shadow:0 4px 16px rgba(139,92,246,0.4), inset 0 1px 0 rgba(255,255,255,0.5); }
+  .lg-card { background:rgba(255,255,255,0.45); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
+    border-radius:20px; padding:18px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.6); box-shadow:0 8px 32px rgba(139,92,246,0.12), inset 0 1px 0 rgba(255,255,255,0.8); }
+  .lg-week-picker { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 14px; margin-bottom:14px;
+    background:linear-gradient(135deg,rgba(236,72,153,0.15),rgba(139,92,246,0.15)); border-radius:16px; border:1px solid rgba(255,255,255,0.5); }
+  .lg-arrow { width:38px; height:38px; border:none; border-radius:50%; background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); color:#7c3aed; font-size:18px; cursor:pointer; font-weight:700; box-shadow:0 4px 12px rgba(139,92,246,0.2); }
+  .lg-week-info { text-align:center; flex:1; }
+  .lg-week-num { font-size:15px; font-weight:700; color:#6b21a8; }
+  .lg-week-range { font-size:11px; color:#7c3aed; margin-top:2px; }
+  .lg-days-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; margin-bottom:14px; }
+  .lg-day-chip { padding:8px 3px; text-align:center; background:rgba(255,255,255,0.55); border-radius:10px; border:1px solid rgba(255,255,255,0.6); cursor:pointer; font-size:10px; font-weight:600; color:#6b21a8; transition:all 0.2s; min-height:52px; display:flex; flex-direction:column; justify-content:center; }
+  .lg-day-chip.selected { background:linear-gradient(135deg,#ec4899,#8b5cf6); color:white; box-shadow:0 4px 12px rgba(139,92,246,0.4); border-color:transparent; }
+  .lg-day-chip .dn { font-size:10px; opacity:0.85; }
+  .lg-day-chip .dd { font-size:14px; font-weight:700; margin-top:2px; }
+  .lg-day-chip .cnt { display:inline-block; padding:1px 5px; background:rgba(255,255,255,0.75); color:#7c3aed; border-radius:8px; font-size:9px; margin-top:2px; }
+  .lg-day-chip.selected .cnt { background:rgba(255,255,255,0.3); color:white; }
+  .lg-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .lg-field { display:flex; flex-direction:column; gap:4px; }
+  .lg-field label { font-size:12px; font-weight:600; color:#6b21a8; padding-left:4px; }
+  .lg-field label .req { color:#ec4899; }
+  .lg-input, .lg-select, .lg-textarea { padding:11px 13px; border:1px solid rgba(255,255,255,0.7); border-radius:12px; background:rgba(255,255,255,0.65); backdrop-filter:blur(10px); color:#1a1a2e; font-size:14px; width:100%; transition:all 0.2s; font-family:inherit; }
+  .lg-input:focus, .lg-select:focus, .lg-textarea:focus { outline:none; background:rgba(255,255,255,0.95); border-color:#8b5cf6; box-shadow:0 0 0 3px rgba(139,92,246,0.2); }
+  .lg-btn { padding:12px 18px; border:none; border-radius:14px; font-size:14px; font-weight:600; cursor:pointer; min-height:46px; transition:all 0.2s; backdrop-filter:blur(10px); font-family:inherit; }
+  .lg-btn-primary { background:linear-gradient(135deg,#ec4899,#8b5cf6); color:white; box-shadow:0 6px 20px rgba(139,92,246,0.4), inset 0 1px 0 rgba(255,255,255,0.4); }
+  .lg-btn-glass { background:rgba(255,255,255,0.55); color:#6b21a8; border:1px solid rgba(255,255,255,0.7); box-shadow:0 4px 12px rgba(139,92,246,0.15); }
+  .lg-btn-danger { background:linear-gradient(135deg,#f87171,#ec4899); color:white; padding:6px 10px; font-size:11px; min-height:32px; border-radius:8px; }
+  .lg-btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; }
+  .lg-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+  .lg-stat { padding:12px 6px; text-align:center; background:rgba(255,255,255,0.55); backdrop-filter:blur(20px) saturate(180%); border-radius:16px; border:1px solid rgba(255,255,255,0.6); box-shadow:0 4px 16px rgba(139,92,246,0.15); }
+  .lg-stat-val { font-size:22px; font-weight:700; background:linear-gradient(135deg,#ec4899,#8b5cf6); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .lg-stat-lbl { font-size:9px; color:#6b21a8; margin-top:3px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+  .lg-table-wrap { overflow-x:auto; border-radius:12px; background:rgba(255,255,255,0.35); -webkit-overflow-scrolling:touch; }
+  .lg-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .lg-table th { padding:8px 10px; text-align:left; background:rgba(139,92,246,0.15); color:#6b21a8; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; }
+  .lg-table td { padding:9px 10px; border-top:1px solid rgba(255,255,255,0.5); color:#1a1a2e; }
+  .lg-badge { display:inline-block; padding:3px 8px; border-radius:10px; font-size:10px; font-weight:600; backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.6); }
+  .b-standard { background:rgba(96,165,250,0.3); color:#1e40af; }
+  .b-sansporc { background:rgba(251,191,36,0.3); color:#92400e; }
+  .b-vege     { background:rgba(52,211,153,0.3); color:#065f46; }
+  .b-autre    { background:rgba(244,114,182,0.3); color:#9d174d; }
+  .b-salarie  { background:rgba(59,130,246,0.3); color:#1e3a8a; }
+  .b-invite   { background:rgba(168,85,247,0.3); color:#6b21a8; }
+  .b-resident { background:rgba(20,184,166,0.3); color:#115e59; }
+  .b-famille  { background:rgba(251,146,60,0.3); color:#9a3412; }
+  .lg-toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(100px); padding:12px 20px; background:rgba(255,255,255,0.9); backdrop-filter:blur(20px) saturate(180%); border:1px solid rgba(255,255,255,0.7); color:#6b21a8; border-radius:16px; box-shadow:0 10px 40px rgba(139,92,246,0.3); z-index:1000; opacity:0; transition:all 0.3s; font-weight:600; font-size:14px; max-width:90vw; text-align:center; }
+  .lg-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .lg-toast.error { color:#9f1239; }
+  .lg-empty { text-align:center; padding:30px 16px; color:#7c3aed; font-size:14px; }
+  .hidden { display:none; }
+  .lg-info { background:linear-gradient(135deg,rgba(96,165,250,0.2),rgba(139,92,246,0.2)); border:1px solid rgba(255,255,255,0.6); border-radius:12px; padding:11px 13px; font-size:12px; color:#4c1d95; margin-bottom:12px; backdrop-filter:blur(10px); }
+  .lg-filters { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+  .allergene-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+  .allergene-chip { padding:10px 6px; text-align:center; background:rgba(255,255,255,0.6); border-radius:14px; border:1px solid rgba(255,255,255,0.7); cursor:pointer; transition:all 0.2s; font-size:10px; font-weight:600; color:#6b21a8; }
+  .allergene-chip .em { font-size:24px; display:block; margin-bottom:3px; }
+  .allergene-chip.selected { background:linear-gradient(135deg,#f97316,#ec4899); color:white; box-shadow:0 4px 14px rgba(236,72,153,0.4); border-color:transparent; }
+  .pdf-drop { border:2px dashed rgba(139,92,246,0.4); border-radius:16px; padding:28px 18px; text-align:center; background:rgba(255,255,255,0.35); color:#6b21a8; cursor:pointer; transition:all 0.2s; }
+  .pdf-drop.dragover { background:rgba(139,92,246,0.15); border-color:#ec4899; }
+  .pdf-viewer { width:100%; height:65vh; min-height:400px; border-radius:14px; border:1px solid rgba(255,255,255,0.7); background:white; }
+  .sync-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-right:5px; animation:pulse-dot 2s infinite; }
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
+  @media (max-width:600px) {
+    .lg-form-grid { grid-template-columns:1fr; }
+    .lg-stats { grid-template-columns:repeat(2,1fr); }
+    .lg-filters { grid-template-columns:1fr 1fr; }
+    .lg-days-grid { gap:3px; }
+    .lg-day-chip { padding:6px 2px; }
+    .lg-day-chip .dd { font-size:13px; }
+    .lg-title { font-size:17px; }
+    .allergene-grid { grid-template-columns:repeat(3,1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="lg-blob b1"></div>
+<div class="lg-blob b2"></div>
+<div class="lg-blob b3"></div>
+<div class="lg-app">
+  <div class="lg-content">
+    <div class="lg-header">
+      <div>
+        <h1 class="lg-title">✨ Résa Repas</h1>
+        <div class="lg-subtitle">Centre de Santé · hebdomadaire</div>
+      </div>
+      <div class="lg-week-badge" id="header-week">Semaine —</div>
+    </div>
+    <div class="lg-tabs">
+      <button class="lg-tab active" data-tab="reserver">➕ Réserver</button>
+      <button class="lg-tab" data-tab="semaine">📅 Semaine</button>
+      <button class="lg-tab" data-tab="menu">🍽️ Menu</button>
+      <button class="lg-tab" data-tab="allergene">⚠️ Allergènes</button>
+      <button class="lg-tab" data-tab="export">📊 Export</button>
+      <button class="lg-tab" data-tab="sauvegarde">💾 Data</button>
+    </div>
+
+    <div id="tab-reserver" class="tab-content">
+      <div class="lg-card">
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num">—</div><div class="lg-week-range" id="wk-range">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-days-grid" id="days-grid"></div>
+        <div class="lg-info">📍 Sélectionnez un ou plusieurs jours puis remplissez le formulaire.</div>
+        <form id="reservation-form">
+          <div class="lg-form-grid">
+            <div class="lg-field"><label>Nom <span class="req">*</span></label><input type="text" class="lg-input" id="nom" required placeholder="DUPONT" /></div>
+            <div class="lg-field"><label>Prénom <span class="req">*</span></label><input type="text" class="lg-input" id="prenom" required placeholder="Jean" /></div>
+            <div class="lg-field"><label>Type de repas <span class="req">*</span></label>
+              <select class="lg-select" id="type-repas" required>
+                <option value="">-- Choisir --</option>
+                <option>Petit-déjeuner</option><option>Déjeuner</option><option>Dîner</option><option>Collation</option>
+              </select></div>
+            <div class="lg-field"><label>Catégorie <span class="req">*</span></label>
+              <select class="lg-select" id="categorie" required>
+                <option value="">-- Choisir --</option>
+                <option>Salarié</option><option>Invité</option><option>Résident</option><option>Famille</option>
+              </select></div>
+            <div class="lg-field"><label>Régime <span class="req">*</span></label>
+              <select class="lg-select" id="regime" required>
+                <option value="">-- Choisir --</option>
+                <option>Standard</option><option>Sans porc</option><option>Végétarien</option><option>Autre</option>
+              </select></div>
+            <div class="lg-field" id="autre-regime-field" style="display:none;"><label>Précision</label><input type="text" class="lg-input" id="autre-regime" placeholder="Sans gluten..." /></div>
+            <div class="lg-field"><label>Service / Chambre</label><input type="text" class="lg-input" id="service" placeholder="Ch. 214" /></div>
+            <div class="lg-field"><label>Observations</label><input type="text" class="lg-input" id="observations" placeholder="Note cuisine" /></div>
+          </div>
+          <div class="lg-field" style="margin-top:12px;">
+            <label>⚠️ Allergènes</label>
+            <div class="allergene-grid" id="alg-form-grid" style="margin-top:6px;"></div>
+          </div>
+          <div class="lg-btn-row">
+            <button type="submit" class="lg-btn lg-btn-primary">✓ Valider</button>
+            <button type="reset" class="lg-btn lg-btn-glass">Effacer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="tab-semaine" class="tab-content hidden">
+      <div class="lg-stats" id="stats-row"></div>
+      <div class="lg-card">
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-2">—</div><div class="lg-week-range" id="wk-range-2">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-filters">
+          <div class="lg-field"><label>Catégorie</label>
+            <select class="lg-select" id="f-cat">
+              <option value="">Toutes</option><option>Salarié</option><option>Invité</option><option>Résident</option><option>Famille</option>
+            </select></div>
+          <div class="lg-field"><label>Régime</label>
+            <select class="lg-select" id="f-reg">
+              <option value="">Tous</option><option>Standard</option><option>Sans porc</option><option>Végétarien</option><option>Autre</option>
+            </select></div>
+          <div class="lg-field"><label>Recherche</label><input type="text" class="lg-input" id="f-nom" placeholder="Nom" /></div>
+        </div>
+        <div id="table-container"></div>
+      </div>
+    </div>
+
+    <div id="tab-menu" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">🍽️ Menu de la semaine</h3>
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-4">—</div><div class="lg-week-range" id="wk-range-4">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-info">📄 Ajoutez le menu au format PDF pour cette semaine. Il sera affiché ci-dessous et consultable à tout moment.</div>
+        <div class="pdf-drop" id="pdf-drop" onclick="document.getElementById('pdf-input').click()">
+          <div style="font-size:36px;">📎</div>
+          <div style="margin-top:6px; font-weight:600;">Cliquer ou glisser un PDF</div>
+          <div style="font-size:11px; opacity:0.7; margin-top:4px;">Menu associé à la semaine sélectionnée</div>
+        </div>
+        <input type="file" id="pdf-input" accept="application/pdf" style="display:none" />
+        <div class="lg-btn-row" id="menu-actions" style="display:none;">
+          <button class="lg-btn lg-btn-glass" onclick="downloadMenu()">⬇️ Télécharger PDF</button>
+          <button class="lg-btn lg-btn-danger" onclick="removeMenu()" style="min-height:44px;padding:12px 18px;font-size:14px;">🗑️ Retirer</button>
+        </div>
+        <div id="menu-viewer-wrap" style="margin-top:14px;"></div>
+      </div>
+    </div>
+
+    <div id="tab-allergene" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">⚠️ Allergènes de la semaine</h3>
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-5">—</div><div class="lg-week-range" id="wk-range-5">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-info">Vue d'ensemble des allergènes déclarés cette semaine.</div>
+        <div class="allergene-grid" id="alg-summary-grid"></div>
+        <div style="margin-top:16px;" id="alg-list"></div>
+      </div>
+    </div>
+
+    <div id="tab-export" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">📤 Export cuisine (semaine)</h3>
+        <div class="lg-info">Excel : une feuille par jour + récap semaine + feuille allergènes.</div>
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-3">—</div><div class="lg-week-range" id="wk-range-3">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-btn-row">
+          <button class="lg-btn lg-btn-primary" onclick="exportExcelWeek()">📗 Excel semaine</button>
+          <button class="lg-btn lg-btn-glass" onclick="exportCSVWeek()">📄 CSV</button>
+          <button class="lg-btn lg-btn-glass" onclick="exportRecapCuisine()">🍳 Récap cuisine</button>
+        </div>
+      </div>
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">📅 Multi-semaines</h3>
+        <div class="lg-form-grid">
+          <div class="lg-field"><label>Semaine début</label><input type="week" class="lg-input" id="exp-w-debut" /></div>
+          <div class="lg-field"><label>Semaine fin</label><input type="week" class="lg-input" id="exp-w-fin" /></div>
+        </div>
+        <div class="lg-btn-row"><button class="lg-btn lg-btn-primary" onclick="exportExcelMultiWeek()">📗 Export</button></div>
+      </div>
+    </div>
+
+    <div id="tab-sauvegarde" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">☁️ Synchronisation Firebase</h3>
+        <!-- AJOUT : Indication d'état plus claire -->
+        <div class="lg-info" id="sync-status-info">🔄 Connexion à Firebase en cours…</div>
+        <div id="storage-info" style="margin-top:14px;font-size:12px;color:#7c3aed;font-weight:500;"></div>
+      </div>
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">💾 Sauvegarde manuelle</h3>
+        <div class="lg-info">Exportez une copie de sécurité en JSON ou réimportez des données existantes.</div>
+        <div class="lg-btn-row">
+          <button class="lg-btn lg-btn-primary" onclick="exportJSON()">💾 Exporter JSON</button>
+          <button class="lg-btn lg-btn-glass" onclick="document.getElementById('import-file').click()">📂 Importer JSON</button>
+          <input type="file" id="import-file" accept=".json" style="display:none" />
+          <button class="lg-btn lg-btn-danger" onclick="clearAll()" style="min-height:44px;padding:12px 18px;font-size:14px;">🗑️ Tout effacer</button>
+        </div>
+      </div>
+      <div class="lg-card">
+        <h3 style="margin:0 0 8px; color:#6b21a8;">📱 Installer sur mobile</h3>
+        <div style="font-size:12px;color:#4c1d95;line-height:1.6;">
+          <strong>iPhone (Safari)</strong> : appuyez sur ⎋ Partager → « Sur l'écran d'accueil »<br>
+          <strong>Android (Chrome)</strong> : menu ⋮ → « Ajouter à l'écran d'accueil »<br>
+          L'application s'ouvrira alors en plein écran comme une vraie app.
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="lg-toast"></div>
+  </div>
+</div>
+
+<!-- Librairie Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- Configuration Firebase + initialisation -->
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyClkZJB_ThSqarUJv-lwLPy2VT1VIjeScs",
+    authDomain: "reservation-repas-9d79c.firebaseapp.com",
+    projectId: "reservation-repas-9d79c",
+    storageBucket: "reservation-repas-9d79c.firebasestorage.app",
+    messagingSenderId: "903094627383",
+    appId: "1:903094627383:web:9ea2fbe813fd23d0a0a3b2"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // Persistance hors-ligne (fonctionne aussi si pas de connexion)
+  db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+    if (err.code === 'failed-precondition') {
+      console.warn('Persistance hors-ligne désactivée : plusieurs onglets ouverts.');
+    } else if (err.code === 'unimplemented') {
+      console.warn('Persistance hors-ligne non supportée par ce navigateur.');
+    }
+  });
+</script>
+
+<!-- Application principale -->
+<script>
+(function(){
+  const LS_MENU_KEY = 'resaRepas_menus_v1';
+  let reservations = [];
+  let menusByWeek = {};
+  let currentWeekMonday = getMondayOf(new Date());
+  let selectedDays = new Set();
+  let formAllergenes = new Set();
+  let syncActive = false;
+
+  const ALLERGENES = [
+    {k:'gluten',l:'Gluten',e:'🌾'},{k:'lactose',l:'Lactose',e:'🥛'},
+    {k:'oeuf',l:'Œuf',e:'🥚'},{k:'arachide',l:'Arachide',e:'🥜'},
+    {k:'fruits_coque',l:'Fruits à coque',e:'🌰'},{k:'soja',l:'Soja',e:'🫘'},
+    {k:'poisson',l:'Poisson',e:'🐟'},{k:'crustaces',l:'Crustacés',e:'🦐'},
+    {k:'mollusques',l:'Mollusques',e:'🦑'},{k:'sesame',l:'Sésame',e:'🫓'},
+    {k:'moutarde',l:'Moutarde',e:'🌭'},{k:'celeri',l:'Céleri',e:'🥬'},
+    {k:'sulfites',l:'Sulfites',e:'🍷'},{k:'lupin',l:'Lupin',e:'🌱'},
+  ];
+
+  /* ── Menus PDF : stockage local uniquement (trop volumineux pour Firestore) ── */
+  function loadMenus() {
+    try {
+      const raw = localStorage.getItem(LS_MENU_KEY);
+      if (raw) menusByWeek = JSON.parse(raw);
+    } catch(e) { console.warn('Erreur chargement menus', e); }
+  }
+  function saveMenus() {
+    try {
+      localStorage.setItem(LS_MENU_KEY, JSON.stringify(menusByWeek));
+    } catch(e) {
+      toast('⚠️ Stockage PDF plein. Retirez les anciens menus.', true);
+    }
+  }
+
+  /* ── Synchronisation temps réel via Firestore ── */
+  function setupRealtimeSync() {
+    // includeMetadataChanges permet de savoir si on lit le cache local ou le serveur
+    db.collection('reservations')
+      .onSnapshot({ includeMetadataChanges: true }, snapshot => {
+        reservations = snapshot.docs.map(doc => ({ firestoreId: doc.id, ...doc.data() }));
+        // Tri local par date de création
+        reservations.sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+        
+        // Si fromCache est vrai, les données viennent du cache local et ne sont pas (encore) confirmées par le serveur
+        const isFromCache = snapshot.metadata.fromCache;
+        const hasPendingWrites = snapshot.metadata.hasPendingWrites;
+        
+        syncActive = !isFromCache;
+        updateSyncStatus(syncActive, hasPendingWrites);
+        
+        renderDaysGrid();
+        refreshList();
+        renderAllergeneSummary();
+        updateStorageInfo();
+      }, error => {
+        console.error('Erreur Firestore :', error);
+        syncActive = false;
+        
+        // C'est très souvent le problème quand les données ne se synchronisent pas entre appareils
+        if (error.code === 'permission-denied') {
+          updateSyncStatus(false, false, '🔒 <strong>Accès refusé.</strong> Les règles de sécurité Firebase bloquent la synchronisation (souvent car la période de "Test Mode" de 30 jours a expiré).');
+          toast('⚠️ Accès refusé par Firebase (Vérifiez les règles Firestore)', true);
+        } else {
+          updateSyncStatus(false, false);
+          toast('⚠️ Erreur de synchronisation Firebase', true);
+        }
+      });
+  }
+
+  function updateSyncStatus(isOnline, hasPendingWrites, customMsg) {
+    const el = document.getElementById('sync-status-info');
+    if (!el) return;
+    
+    if (customMsg) {
+      el.innerHTML = '<span style="color:#b91c1c;">' + customMsg + '</span>';
+      return;
+    }
+
+    if (isOnline) {
+      if (hasPendingWrites) {
+        el.innerHTML = '<span class="sync-dot" style="background:#fbbf24;"></span><strong>Enregistrement...</strong> en cours d\'envoi vers le cloud.';
+      } else {
+        el.innerHTML = '<span class="sync-dot"></span><strong>Synchronisé</strong> — toutes les réservations sont partagées en temps réel.';
+      }
+    } else {
+      el.innerHTML = '⚠️ <strong>Hors ligne / Non synchronisé</strong> — les modifications restent locales pour le moment.';
+    }
+  }
+
+  /* ── Utilitaires dates ── */
+  function getMondayOf(d) { const date=new Date(d); const day=date.getDay(); date.setDate(date.getDate()+(day===0?-6:1-day)); date.setHours(0,0,0,0); return date; }
+  function getISOWeek(d) {
+    const date=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const dayNum=date.getUTCDay()||7;
+    date.setUTCDate(date.getUTCDate()+4-dayNum);
+    const yearStart=new Date(Date.UTC(date.getUTCFullYear(),0,1));
+    return { week:Math.ceil((((date-yearStart)/86400000)+1)/7), year:date.getUTCFullYear() };
+  }
+  const fmt=d=>d.toISOString().split('T')[0];
+  const fmtFR=s=>{ if(!s)return''; const p=s.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+  const addDays=(d,n)=>{ const r=new Date(d); r.setDate(r.getDate()+n); return r; };
+  const weekKey=d=>{ const i=getISOWeek(d); return `${i.year}-W${String(i.week).padStart(2,'0')}`; };
+  const dayNames=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  const monthNames=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+
+  /* ── Rendu interface ── */
+  function renderWeekPickers() {
+    const mon=currentWeekMonday, sun=addDays(mon,6);
+    const iso=getISOWeek(mon);
+    const rangeStr=`${mon.getDate()} ${monthNames[mon.getMonth()]} → ${sun.getDate()} ${monthNames[sun.getMonth()]} ${sun.getFullYear()}`;
+    const numStr=`Semaine ${iso.week} · ${iso.year}`;
+    ['wk-num','wk-num-2','wk-num-3','wk-num-4','wk-num-5'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=numStr;});
+    ['wk-range','wk-range-2','wk-range-3','wk-range-4','wk-range-5'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=rangeStr;});
+    const h=document.getElementById('header-week');
+    if(h)h.innerHTML=`Sem. ${iso.week}<br><span style="font-weight:500;font-size:10px;">${mon.getDate()}/${mon.getMonth()+1} → ${sun.getDate()}/${sun.getMonth()+1}</span>`;
+    renderDaysGrid(); refreshList(); renderMenuViewer(); renderAllergeneSummary();
+  }
+
+  function renderDaysGrid() {
+    const grid=document.getElementById('days-grid'); grid.innerHTML='';
+    for(let i=0;i<7;i++) {
+      const d=addDays(currentWeekMonday,i), key=fmt(d);
+      const count=reservations.filter(r=>r.date===key).length;
+      const chip=document.createElement('div');
+      chip.className='lg-day-chip'+(selectedDays.has(key)?' selected':'');
+      chip.innerHTML=`<div class="dn">${dayNames[i]}</div><div class="dd">${d.getDate()}</div>${count>0?`<span class="cnt">${count}</span>`:''}`;
+      chip.addEventListener('click',()=>{ if(selectedDays.has(key))selectedDays.delete(key); else selectedDays.add(key); renderDaysGrid(); });
+      grid.appendChild(chip);
+    }
+  }
+
+  function renderAllergeneFormGrid() {
+    const grid=document.getElementById('alg-form-grid'); grid.innerHTML='';
+    ALLERGENES.forEach(a=>{
+      const c=document.createElement('div');
+      c.className='allergene-chip'+(formAllergenes.has(a.k)?' selected':'');
+      c.innerHTML=`<span class="em">${a.e}</span>${a.l}`;
+      c.addEventListener('click',()=>{ if(formAllergenes.has(a.k))formAllergenes.delete(a.k); else formAllergenes.add(a.k); renderAllergeneFormGrid(); });
+      grid.appendChild(c);
+    });
+  }
+
+  function renderAllergeneSummary() {
+    const grid=document.getElementById('alg-summary-grid'); if(!grid)return;
+    const weekRes=currentWeekReservations();
+    const counts={};
+    weekRes.forEach(r=>(r.allergenes||[]).forEach(a=>counts[a]=(counts[a]||0)+1));
+    grid.innerHTML='';
+    ALLERGENES.forEach(a=>{
+      const n=counts[a.k]||0;
+      const c=document.createElement('div');
+      c.className='allergene-chip'+(n>0?' selected':'');
+      c.innerHTML=`<span class="em">${a.e}</span>${a.l}<div style="margin-top:3px;font-size:15px;font-weight:700;">${n}</div>`;
+      grid.appendChild(c);
+    });
+    const list=document.getElementById('alg-list');
+    const withAlg=weekRes.filter(r=>(r.allergenes||[]).length>0);
+    if(withAlg.length===0){ list.innerHTML='<div class="lg-empty">Aucun allergène déclaré cette semaine.</div>'; return; }
+    let h='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Nom</th><th>Repas</th><th>Allergènes</th></tr></thead><tbody>';
+    withAlg.sort((a,b)=>(a.date+a.typeRepas).localeCompare(b.date+b.typeRepas)).forEach(r=>{
+      const d=new Date(r.date+'T00:00:00');
+      const labels=(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k); return a?`${a.e} ${a.l}`:k;}).join(', ');
+      h+=`<tr><td><strong>${dayNames[(d.getDay()+6)%7]}</strong> ${d.getDate()}/${d.getMonth()+1}</td><td><strong>${r.nom}</strong> ${r.prenom}</td><td>${r.typeRepas}</td><td>${labels}</td></tr>`;
+    });
+    h+='</tbody></table></div>';
+    list.innerHTML=h;
+  }
+
+  function renderMenuViewer() {
+    const wrap=document.getElementById('menu-viewer-wrap');
+    const actions=document.getElementById('menu-actions');
+    if(!wrap)return;
+    const key=weekKey(currentWeekMonday), menu=menusByWeek[key];
+    if(!menu){ wrap.innerHTML='<div class="lg-empty">Aucun menu ajouté pour cette semaine.</div>'; actions.style.display='none'; return; }
+    wrap.innerHTML=`<div style="margin-bottom:8px;font-size:12px;color:#6b21a8;font-weight:600;">📄 ${menu.name}</div><iframe class="pdf-viewer" src="${menu.dataUrl}"></iframe><div style="margin-top:6px;font-size:11px;color:#7c3aed;">Astuce iOS : si le PDF ne s'affiche pas, utilisez le bouton « Télécharger PDF ».</div>`;
+    actions.style.display='flex';
+  }
+
+  window.changeWeek=function(delta){ currentWeekMonday=addDays(currentWeekMonday,delta*7); selectedDays.clear(); renderWeekPickers(); };
+
+  document.querySelectorAll('.lg-tab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.lg-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
+      btn.classList.add('active');
+      document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
+      renderWeekPickers();
+    });
+  });
+
+  function toast(msg,isError){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.className='lg-toast show'+(isError?' error':'');
+    setTimeout(()=>t.className='lg-toast',2600);
+  }
+  window.toast = toast;
+
+  document.getElementById('regime').addEventListener('change',e=>{
+    document.getElementById('autre-regime-field').style.display=e.target.value==='Autre'?'flex':'none';
+  });
+
+  /* ── Soumission du formulaire → écriture dans Firestore ── */
+  document.getElementById('reservation-form').addEventListener('submit',e=>{
+    e.preventDefault();
+    if(selectedDays.size===0){ toast('⚠️ Sélectionnez au moins un jour',true); return; }
+    const regimeVal=document.getElementById('regime').value;
+    const base={
+      nom:document.getElementById('nom').value.trim().toUpperCase(),
+      prenom:document.getElementById('prenom').value.trim(),
+      typeRepas:document.getElementById('type-repas').value,
+      categorie:document.getElementById('categorie').value,
+      regime:regimeVal,
+      regimeDetail:regimeVal==='Autre'?document.getElementById('autre-regime').value.trim():'',
+      service:document.getElementById('service').value.trim(),
+      observations:document.getElementById('observations').value.trim(),
+      allergenes:[...formAllergenes],
+    };
+    const days=[...selectedDays].sort();
+    
+    const promises=days.map(date=>
+      db.collection('reservations').add({ date, ...base, createdAt: new Date().toISOString() })
+    );
+    
+    // Note: Avec enablePersistence, cette promesse est résolue localement immédiatement
+    Promise.all(promises)
+      .then(()=>toast(`✓ ${days.length} réservation(s) pour ${base.prenom} ${base.nom}`))
+      .catch((err)=>{
+          console.error(err);
+          toast('⚠️ Erreur lors de l\'enregistrement', true);
+      });
+      
+    document.getElementById('reservation-form').reset();
+    document.getElementById('autre-regime-field').style.display='none';
+    selectedDays.clear(); formAllergenes.clear();
+    renderDaysGrid(); renderAllergeneFormGrid();
+  });
+
+  function currentWeekReservations() {
+    const mon=fmt(currentWeekMonday), sun=fmt(addDays(currentWeekMonday,6));
+    return reservations.filter(r=>r.date>=mon && r.date<=sun);
+  }
+
+  function refreshList() {
+    const fCat=document.getElementById('f-cat')?.value||'';
+    const fReg=document.getElementById('f-reg')?.value||'';
+    const fNom=(document.getElementById('f-nom')?.value||'').toLowerCase();
+    let filtered=currentWeekReservations().filter(r=>{
+      if(fCat && r.categorie!==fCat)return false;
+      if(fReg && r.regime!==fReg)return false;
+      if(fNom && !(r.nom.toLowerCase().includes(fNom)||r.prenom.toLowerCase().includes(fNom)))return false;
+      return true;
+    });
+    const stats=document.getElementById('stats-row');
+    if(stats){
+      const byReg={};
+      filtered.forEach(r=>byReg[r.regime]=(byReg[r.regime]||0)+1);
+      stats.innerHTML=`
+        <div class="lg-stat"><div class="lg-stat-val">${filtered.length}</div><div class="lg-stat-lbl">Semaine</div></div>
+        <div class="lg-stat"><div class="lg-stat-val">${byReg['Standard']||0}</div><div class="lg-stat-lbl">Standard</div></div>
+        <div class="lg-stat"><div class="lg-stat-val">${byReg['Sans porc']||0}</div><div class="lg-stat-lbl">Sans porc</div></div>
+        <div class="lg-stat"><div class="lg-stat-val">${(byReg['Végétarien']||0)+(byReg['Autre']||0)}</div><div class="lg-stat-lbl">Végé/Autre</div></div>`;
+    }
+    const container=document.getElementById('table-container');
+    if(!container)return;
+    if(filtered.length===0){ container.innerHTML='<div class="lg-empty">✨ Aucune réservation cette semaine.</div>'; return; }
+    filtered.sort((a,b)=>(a.date+a.typeRepas).localeCompare(b.date+b.typeRepas));
+    const bReg={'Standard':'b-standard','Sans porc':'b-sansporc','Végétarien':'b-vege','Autre':'b-autre'};
+    const bCat={'Salarié':'b-salarie','Invité':'b-invite','Résident':'b-resident','Famille':'b-famille'};
+    let html='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>Nom</th><th>Cat</th><th>Régime</th><th>Allerg.</th><th></th></tr></thead><tbody>';
+    filtered.forEach(r=>{
+      const d=new Date(r.date+'T00:00:00');
+      const alg=(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k); return a?a.e:'';}).join(' ');
+      // Utilisation de l'ID Firestore pour la suppression
+      html+=`<tr>
+        <td><strong>${dayNames[(d.getDay()+6)%7]}</strong> ${d.getDate()}/${d.getMonth()+1}</td>
+        <td>${r.typeRepas}</td><td><strong>${r.nom}</strong> ${r.prenom}</td>
+        <td><span class="lg-badge ${bCat[r.categorie]||''}">${r.categorie}</span></td>
+        <td><span class="lg-badge ${bReg[r.regime]||''}">${r.regime}${r.regimeDetail?' · '+r.regimeDetail:''}</span></td>
+        <td>${alg||'-'}</td>
+        <td><button class="lg-btn lg-btn-danger" onclick="window.__delR('${r.firestoreId}')">✕</button></td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+    container.innerHTML=html;
+  }
+
+  /* ── Suppression dans Firestore ── */
+  window.__delR=function(firestoreId){
+    if(!confirm('Supprimer cette réservation ?'))return;
+    db.collection('reservations').doc(firestoreId).delete()
+      .then(()=>toast('Réservation supprimée'))
+      .catch((err)=>{
+          if (err.code === 'permission-denied') {
+              toast('⚠️ Accès refusé : vous n\'avez pas la permission de supprimer.', true);
+          } else {
+              toast('⚠️ Erreur de suppression', true);
+          }
+      });
+  };
+
+  ['f-cat','f-reg','f-nom'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',refreshList);
+  });
+
+  /* ── Gestion PDF menus (local uniquement) ── */
+  const drop=document.getElementById('pdf-drop'), input=document.getElementById('pdf-input');
+  ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('dragover');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('dragover');}));
+  drop.addEventListener('drop',e=>{ if(e.dataTransfer.files[0])handlePDF(e.dataTransfer.files[0]); });
+  input.addEventListener('change',e=>{ if(e.target.files[0])handlePDF(e.target.files[0]); });
+
+  function handlePDF(file){
+    if(file.type!=='application/pdf'){ toast('Le fichier doit être un PDF',true); return; }
+    if(file.size>4*1024*1024){ toast('PDF trop volumineux (max 4 Mo)',true); return; }
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const key=weekKey(currentWeekMonday);
+      menusByWeek[key]={ name:file.name, dataUrl:e.target.result, addedAt:new Date().toISOString() };
+      saveMenus(); renderMenuViewer();
+      toast('✓ Menu ajouté');
+    };
+    reader.readAsDataURL(file);
+  }
+  window.removeMenu=function(){
+    const key=weekKey(currentWeekMonday);
+    if(!menusByWeek[key])return;
+    if(!confirm('Retirer le menu ?'))return;
+    delete menusByWeek[key]; saveMenus(); renderMenuViewer(); toast('Menu supprimé');
+  };
+  window.downloadMenu=function(){
+    const key=weekKey(currentWeekMonday);
+    const m=menusByWeek[key]; if(!m)return;
+    const a=document.createElement('a');
+    a.href=m.dataUrl; a.download=m.name; a.click();
+  };
+
+  /* ── Export Excel ── */
+  function buildExcelForRange(startDate,endDate,weekLabel){
+    const start=fmt(startDate), end=fmt(endDate);
+    const data=reservations.filter(r=>r.date>=start && r.date<=end);
+    if(data.length===0){ toast('Aucune donnée pour cette période',true); return null; }
+    const wb=XLSX.utils.book_new();
+    const recap={};
+    data.forEach(r=>{
+      const key=r.date+'|'+r.typeRepas;
+      if(!recap[key])recap[key]={Date:fmtFR(r.date),Repas:r.typeRepas,Standard:0,'Sans porc':0,'Végétarien':0,Autre:0,TOTAL:0};
+      recap[key][r.regime]=(recap[key][r.regime]||0)+1;
+      recap[key].TOTAL++;
+    });
+    const recapRows=Object.values(recap).sort((a,b)=>(a.Date+a.Repas).localeCompare(b.Date+b.Repas));
+    const wsR=XLSX.utils.json_to_sheet(recapRows);
+    wsR['!cols']=[{wch:12},{wch:14},{wch:10},{wch:11},{wch:11},{wch:8},{wch:8}];
+    XLSX.utils.book_append_sheet(wb,wsR,'Récap '+weekLabel);
+    const allRows=data.map(r=>({
+      'Date':fmtFR(r.date),'Type repas':r.typeRepas,'Nom':r.nom,'Prénom':r.prenom,
+      'Catégorie':r.categorie,'Régime':r.regime,'Précision':r.regimeDetail||'',
+      'Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', '),
+      'Service':r.service||'','Observations':r.observations||''
+    }));
+    const wsAll=XLSX.utils.json_to_sheet(allRows);
+    wsAll['!cols']=[{wch:12},{wch:14},{wch:15},{wch:15},{wch:12},{wch:13},{wch:18},{wch:22},{wch:15},{wch:22}];
+    XLSX.utils.book_append_sheet(wb,wsAll,'Toutes réservations');
+    const algData=data.filter(r=>(r.allergenes||[]).length>0);
+    if(algData.length>0){
+      const algRows=algData.map(r=>({
+        'Date':fmtFR(r.date),'Repas':r.typeRepas,'Nom':r.nom,'Prénom':r.prenom,
+        'Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', ')
+      }));
+      const wsAlg=XLSX.utils.json_to_sheet(algRows);
+      wsAlg['!cols']=[{wch:12},{wch:14},{wch:15},{wch:15},{wch:35}];
+      XLSX.utils.book_append_sheet(wb,wsAlg,'Allergènes');
+    }
+    const byDate={};
+    data.forEach(r=>{ (byDate[r.date]=byDate[r.date]||[]).push(r); });
+    Object.keys(byDate).sort().forEach(date=>{
+      const d=new Date(date+'T00:00:00');
+      const rows=byDate[date].map(r=>({
+        'Repas':r.typeRepas,'Nom':r.nom,'Prénom':r.prenom,'Catégorie':r.categorie,
+        'Régime':r.regime+(r.regimeDetail?' ('+r.regimeDetail+')':''),
+        'Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', '),
+        'Service':r.service||'','Observations':r.observations||''
+      }));
+      const ws=XLSX.utils.json_to_sheet(rows);
+      ws['!cols']=[{wch:14},{wch:15},{wch:15},{wch:12},{wch:20},{wch:22},{wch:15},{wch:22}];
+      XLSX.utils.book_append_sheet(wb,ws,`${dayNames[(d.getDay()+6)%7]} ${d.getDate()}-${d.getMonth()+1}`.substring(0,31));
+    });
+    return wb;
+  }
+
+  window.exportExcelWeek=function(){
+    const mon=currentWeekMonday, sun=addDays(mon,6);
+    const iso=getISOWeek(mon);
+    const wb=buildExcelForRange(mon,sun,`S${iso.week}-${iso.year}`);
+    if(!wb)return;
+    XLSX.writeFile(wb,`reservations_S${String(iso.week).padStart(2,'0')}_${iso.year}.xlsx`);
+    toast('✓ Excel semaine '+iso.week);
+  };
+  window.exportCSVWeek=function(){
+    const mon=fmt(currentWeekMonday), sun=fmt(addDays(currentWeekMonday,6));
+    const data=reservations.filter(r=>r.date>=mon && r.date<=sun);
+    if(data.length===0){ toast('Aucune donnée',true); return; }
+    const headers=['Date','Type repas','Nom','Prénom','Catégorie','Régime','Précision','Allergènes','Service','Observations'];
+    const rows=data.map(r=>[
+      fmtFR(r.date),r.typeRepas,r.nom,r.prenom,r.categorie,r.regime,r.regimeDetail||'',
+      (r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join('|'),
+      r.service||'',(r.observations||'').replace(/[\n;]/g,' ')
+    ]);
+    const csv='\uFEFF'+[headers,...rows].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\n');
+    const iso=getISOWeek(currentWeekMonday);
+    downloadBlob(csv,`reservations_S${iso.week}_${iso.year}.csv`,'text/csv;charset=utf-8');
+    toast('✓ CSV exporté');
+  };
+  window.exportRecapCuisine=function(){
+    const mon=currentWeekMonday, sun=addDays(mon,6);
+    const iso=getISOWeek(mon);
+    const startS=fmt(mon), endS=fmt(sun);
+    const data=reservations.filter(r=>r.date>=startS && r.date<=endS);
+    if(data.length===0){ toast('Aucune donnée',true); return; }
+    const wb=XLSX.utils.book_new();
+    for(let i=0;i<7;i++){
+      const d=addDays(mon,i), key=fmt(d);
+      const dayData=data.filter(r=>r.date===key);
+      if(dayData.length===0)continue;
+      const rows=dayData.map(r=>({
+        'Repas':r.typeRepas,'Nom':r.nom,'Prénom':r.prenom,'Catégorie':r.categorie,
+        'Régime':r.regime+(r.regimeDetail?' ('+r.regimeDetail+')':''),
+        'Allergènes':(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k);return a?a.l:k;}).join(', '),
+        'Service':r.service||'','Obs.':r.observations||''
+      }));
+      const ws=XLSX.utils.json_to_sheet(rows);
+      ws['!cols']=[{wch:14},{wch:15},{wch:15},{wch:12},{wch:22},{wch:22},{wch:15},{wch:20}];
+      XLSX.utils.book_append_sheet(wb,ws,`${dayNames[i]} ${d.getDate()}-${d.getMonth()+1}`.substring(0,31));
+    }
+    XLSX.writeFile(wb,`cuisine_S${iso.week}_${iso.year}.xlsx`);
+    toast('✓ Récap cuisine exporté');
+  };
+  window.exportExcelMultiWeek=function(){
+    const wS=document.getElementById('exp-w-debut').value;
+    const wE=document.getElementById('exp-w-fin').value;
+    if(!wS||!wE){ toast('Sélectionnez deux semaines',true); return; }
+    const startMon=mondayFromISOWeek(wS), endMon=mondayFromISOWeek(wE);
+    const wb=buildExcelForRange(startMon,addDays(endMon,6),`${wS} → ${wE}`);
+    if(!wb)return;
+    XLSX.writeFile(wb,`reservations_${wS}_a_${wE}.xlsx`);
+    toast('✓ Export multi-semaines');
+  };
+  function mondayFromISOWeek(str){
+    const [year,wPart]=str.split('-W'); const w=parseInt(wPart,10);
+    const simple=new Date(Date.UTC(parseInt(year),0,1+(w-1)*7));
+    const dow=simple.getUTCDay(), mon=new Date(simple);
+    if(dow<=4)mon.setUTCDate(simple.getUTCDate()-simple.getUTCDay()+1);
+    else mon.setUTCDate(simple.getUTCDate()+8-simple.getUTCDay());
+    return new Date(mon.getUTCFullYear(),mon.getUTCMonth(),mon.getUTCDate());
+  }
+  function downloadBlob(content,filename,mime){
+    const blob=new Blob([content],{type:mime});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=filename; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),500);
+  }
+
+  /* ── Export / Import JSON (sauvegarde manuelle) ── */
+  window.exportJSON=function(){
+    // On exclut le firestoreId de l'export pour garder un format propre
+    const exportData=reservations.map(({firestoreId,...r})=>r);
+    const payload={version:4,exportedAt:new Date().toISOString(),reservations:exportData,menusByWeek};
+    downloadBlob(JSON.stringify(payload,null,2),`sauvegarde_repas_${fmt(new Date())}.json`,'application/json');
+    toast('✓ Sauvegarde JSON téléchargée');
+  };
+
+  document.getElementById('import-file').addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try {
+        const data=JSON.parse(ev.target.result);
+        if(!Array.isArray(data.reservations))throw new Error('Format invalide');
+        if(!confirm(`Importer ${data.reservations.length} réservation(s) dans Firebase ?\nLes données existantes seront conservées.`))return;
+        // Batch write vers Firestore
+        const batch=db.batch();
+        data.reservations.forEach(r=>{
+          const {id,firestoreId,...rData}=r; // supprimer les anciens IDs
+          const ref=db.collection('reservations').doc();
+          batch.set(ref,{...rData, createdAt:rData.createdAt||new Date().toISOString()});
+        });
+        batch.commit().then(()=>{
+          if(data.menusByWeek){ menusByWeek={...menusByWeek,...data.menusByWeek}; saveMenus(); }
+          toast(`✓ ${data.reservations.length} réservation(s) importées`);
+          updateStorageInfo();
+        }).catch(err=>{
+            if (err.code === 'permission-denied') {
+                toast('⚠️ Erreur import : Accès refusé par les règles Firebase', true);
+            } else {
+                toast('Erreur import : '+err.message,true);
+            }
+        });
+      } catch(err){ toast('Erreur : '+err.message,true); }
+    };
+    reader.readAsText(file); e.target.value='';
+  });
+
+  /* ── Effacer toutes les données depuis Firestore ── */
+  window.clearAll=function(){
+    if(!confirm('Effacer TOUTES les réservations depuis Firebase ?'))return;
+    if(!confirm('Confirmer l\'effacement définitif ? Cette action est irréversible.'))return;
+    db.collection('reservations').get().then(snapshot=>{
+      if(snapshot.empty){ toast('Aucune donnée à effacer'); return; }
+      const batch=db.batch();
+      snapshot.docs.forEach(doc=>batch.delete(doc.ref));
+      return batch.commit();
+    }).then(()=>{
+      menusByWeek={}; saveMenus();
+      toast('✓ Toutes les données effacées');
+      updateStorageInfo();
+    }).catch(err=>{
+        if (err.code === 'permission-denied') {
+            toast('⚠️ Erreur : Vous n\'avez pas la permission de tout effacer.', true);
+        } else {
+            toast('Erreur : '+err.message,true);
+        }
+    });
+  };
+
+  function updateStorageInfo(){
+    const menuCount=Object.keys(menusByWeek).length;
+    const el=document.getElementById('storage-info');
+    if(el) el.innerHTML=
+      `<strong>${reservations.length}</strong> réservation(s) stockées dans le système · <strong>${menuCount}</strong> menu(s) PDF en local.<br>
+       <span style="font-size:11px;color:#6b7280;">Les PDFs restent en local (trop volumineux pour la synchronisation cloud).</span>`;
+  }
+
+  /* ── Initialisation ── */
+  loadMenus();
+  setupRealtimeSync(); // Lance la synchro temps réel
+  renderAllergeneFormGrid();
+  renderWeekPickers();
+  updateStorageInfo();
+})();
+</script>
+</body>
+</html>
