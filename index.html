@@ -9,7 +9,6 @@
 <meta name="apple-mobile-web-app-title" content="Résa Repas" />
 <title>Résa Repas — Centre de Santé</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍽️</text></svg>" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode"></script>
 <style>
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -141,8 +140,7 @@
     <div class="lg-tabs">
       <button class="lg-tab active" data-tab="reserver">➕ Réserver</button>
       <button class="lg-tab" data-tab="semaine">📅 Semaine</button>
-      <button class="lg-tab" data-tab="cuisine">🧑‍🍳 Cuisine</button>
-      <button class="lg-tab" data-tab="scanner">📱 Scan</button>
+      <button class="lg-tab" data-tab="pointage">✔️ Pointage</button>
       <button class="lg-tab" data-tab="avis">⭐ Avis</button>
       <button class="lg-tab" data-tab="stats">📈 Stats</button>
       <button class="lg-tab" data-tab="menu">🍽️ Menu</button>
@@ -234,37 +232,20 @@
       </div>
     </div>
 
-    <div id="tab-cuisine" class="tab-content hidden">
+    <div id="tab-pointage" class="tab-content hidden">
       <div class="lg-card">
-        <h3 style="margin:0 0 12px; color:#6b21a8;">🧑‍🍳 Affichage Cuisine</h3>
-        <div class="lg-info">Placez cette tablette en vue pour que les éducateurs/résidents puissent scanner le QR Code et valider leur repas.</div>
+        <h3 style="margin:0 0 12px; color:#6b21a8;">✔️ Pointer les repas</h3>
+        <div class="lg-info">Sélectionnez le service en cours pour pointer et valider la prise des repas (salariés, résidents, invités...).</div>
         <div class="lg-form-grid" style="margin-bottom:16px;">
-          <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="qr-date" /></div>
+          <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="ptg-date" /></div>
           <div class="lg-field"><label>Repas en cours</label>
-            <select class="lg-select" id="qr-repas">
+            <select class="lg-select" id="ptg-repas">
               <option>Petit-déjeuner</option><option selected>Déjeuner</option><option>Dîner</option><option>Collation</option>
             </select>
           </div>
         </div>
-        <div id="qr-container"></div>
-        <div style="text-align:center;font-weight:700;color:#6b21a8;font-size:18px;" id="qr-label"></div>
-      </div>
-    </div>
-
-    <div id="tab-scanner" class="tab-content hidden">
-      <div class="lg-card" id="scan-view">
-        <h3 style="margin:0 0 12px; color:#6b21a8;">📱 Scanner le repas</h3>
-        <div class="lg-info">Visez le QR Code affiché en cuisine (ou sur un ticket) pour démarrer la validation des repas.</div>
-        <div id="reader" style="width:100%; border-radius:14px; overflow:hidden; border:2px solid rgba(139,92,246,0.3); background:rgba(0,0,0,0.05); min-height:200px;"></div>
-        <button class="lg-btn lg-btn-primary" style="width:100%; margin-top:12px;" onclick="startScanner()">📷 Activer la caméra</button>
-      </div>
-      
-      <div class="lg-card hidden" id="validation-view">
-        <h3 style="margin:0 0 12px; color:#10b981;" id="val-title">✅ Repas détecté</h3>
-        <div class="lg-info">Recherchez la personne dans la liste des réservations pour ce repas afin de valider son plateau.</div>
-        <div class="lg-field"><label>🔍 Rechercher un nom</label><input type="text" class="lg-input" id="val-search" placeholder="Nom ou Prénom..." oninput="renderValidationList()" /></div>
-        <div id="val-list" style="margin-top:12px; max-height:45vh; overflow-y:auto; padding-right:5px;"></div>
-        <button class="lg-btn lg-btn-glass" style="width:100%; margin-top:16px;" onclick="stopScanner()">« Retour à la caméra</button>
+        <div class="lg-field" style="margin-bottom:12px;"><label>🔍 Rechercher un nom</label><input type="text" class="lg-input" id="ptg-search" placeholder="Nom ou Prénom..." /></div>
+        <div id="ptg-list" style="margin-top:12px; max-height:45vh; overflow-y:auto; padding-right:5px;"></div>
       </div>
     </div>
 
@@ -452,10 +433,7 @@
   let formAllergenes = new Set();
   let syncActive = false;
   
-  let html5QrcodeScanner = null;
-  let currentScanData = null;
   let currentValId = null;
-  let qrcode = null;
 
   const ALLERGENES = [
     {k:'gluten',l:'Gluten',e:'🌾'},{k:'lactose',l:'Lactose',e:'🥛'},
@@ -501,7 +479,7 @@
         renderDaysGrid();
         refreshList();
         renderAllergeneSummary();
-        if(document.getElementById('tab-scanner').classList.contains('hidden') === false && currentScanData) renderValidationList();
+        if(document.getElementById('tab-pointage').classList.contains('hidden') === false) renderPointageList();
         if(document.getElementById('tab-avis').classList.contains('hidden') === false) renderAvisList();
         renderStats();
         updateStorageInfo();
@@ -644,7 +622,7 @@
       document.querySelectorAll('.tab-content').forEach(c=>c.classList.add('hidden'));
       btn.classList.add('active');
       document.getElementById('tab-'+btn.dataset.tab).classList.remove('hidden');
-      if(btn.dataset.tab === 'cuisine') updateQRCode();
+      if(btn.dataset.tab === 'pointage') renderPointageList();
       if(btn.dataset.tab === 'avis') renderAvisList();
       renderWeekPickers();
     });
@@ -805,85 +783,39 @@
     a.href=m.dataUrl; a.download=m.name; a.click();
   };
 
-  /* ── CUISINE (GÉNÉRATEUR QR) ── */
-  window.updateQRCode = function() {
-    const d = document.getElementById('qr-date').value || fmt(new Date());
-    if(!document.getElementById('qr-date').value) document.getElementById('qr-date').value = d;
-    const r = document.getElementById('qr-repas').value;
-    const payload = `RESAMED|${d}|${r}`;
-    document.getElementById('qr-label').innerHTML = `${fmtFR(d)} <br> <span style="font-size:24px;color:#ec4899;">${r}</span>`;
+  /* ── POINTAGE DES REPAS ── */
+  window.renderPointageList = function() {
+    const d = document.getElementById('ptg-date').value || fmt(new Date());
+    if(!document.getElementById('ptg-date').value) document.getElementById('ptg-date').value = d;
+    const r = document.getElementById('ptg-repas').value;
+    const q = document.getElementById('ptg-search').value.toLowerCase();
+    const list = document.getElementById('ptg-list');
     
-    if(qrcode) {
-      qrcode.clear(); qrcode.makeCode(payload);
-    } else {
-      const container = document.getElementById("qr-container");
-      if(container && typeof QRCode !== 'undefined') {
-        qrcode = new QRCode(container, { text: payload, width: 280, height: 280, colorDark: "#6b21a8", colorLight: "#ffffff", correctLevel : QRCode.CorrectLevel.H });
-      }
-    }
-  };
-  document.getElementById('qr-date')?.addEventListener('change', updateQRCode);
-  document.getElementById('qr-repas')?.addEventListener('change', updateQRCode);
-
-  /* ── SCANNER & VALIDATION ── */
-  window.startScanner = function() {
-    if(html5QrcodeScanner) return;
-    try {
-      html5QrcodeScanner = new Html5Qrcode("reader");
-      html5QrcodeScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 250 } }, onScanSuccess)
-        .catch(err => toast("Erreur d'accès à la caméra.", true));
-    } catch(e) { toast("La caméra n'est pas supportée sur ce navigateur.", true); }
-  };
-  window.stopScanner = function() {
-    if(html5QrcodeScanner) {
-      html5QrcodeScanner.stop().then(() => { html5QrcodeScanner.clear(); html5QrcodeScanner = null; }).catch(e=>console.warn(e));
-    }
-    document.getElementById('scan-view').classList.remove('hidden');
-    document.getElementById('validation-view').classList.add('hidden');
-    document.getElementById('val-search').value = '';
-  };
-  function onScanSuccess(decodedText) {
-    if(decodedText.startsWith("RESAMED|")) {
-      const parts = decodedText.split('|');
-      currentScanData = { date: parts[1], repas: parts[2] };
-      stopScanner(); // stop camera
-      document.getElementById('scan-view').classList.add('hidden');
-      document.getElementById('validation-view').classList.remove('hidden');
-      document.getElementById('val-title').innerHTML = `✅ ${currentScanData.repas} du ${fmtFR(currentScanData.date)}`;
-      renderValidationList();
-      toast('✅ Code scanné avec succès');
-    } else {
-      toast('⚠️ Code invalide', true);
-    }
-  }
-  window.renderValidationList = function() {
-    const q = document.getElementById('val-search').value.toLowerCase();
-    const list = document.getElementById('val-list');
-    if(!currentScanData) return;
-    const res = reservations.filter(r => r.date === currentScanData.date && r.typeRepas === currentScanData.repas);
+    const res = reservations.filter(x => x.date === d && x.typeRepas === r);
     if(res.length === 0) { list.innerHTML = '<div class="lg-empty">Aucune réservation pour ce repas.</div>'; return; }
     
     let html = '';
-    let count = 0;
-    res.forEach(r => {
-      if(q && !(r.nom.toLowerCase().includes(q) || r.prenom.toLowerCase().includes(q))) return;
-      count++;
-      const isPris = r.status === 'pris';
+    res.forEach(x => {
+      if(q && !(x.nom.toLowerCase().includes(q) || x.prenom.toLowerCase().includes(q))) return;
+      const isPris = x.status === 'pris';
       html += `<div class="res-list-item ${isPris ? 'valid' : ''}">
-        <div><strong>${r.nom}</strong> ${r.prenom}<br><span style="font-size:11px;color:#6b21a8;font-weight:600;">${r.categorie} ${r.lieu?'· '+r.lieu:''}</span></div>
-        <button class="lg-btn ${isPris ? 'lg-btn-glass' : 'lg-btn-primary'}" style="min-height:36px;padding:8px 12px;font-size:12px;" ${isPris ? 'disabled' : `onclick="validateMeal('${r.firestoreId}')"`}>
+        <div><strong>${x.nom}</strong> ${x.prenom}<br><span style="font-size:11px;color:#6b21a8;font-weight:600;">${x.categorie} ${x.lieu?'· '+x.lieu:''}</span></div>
+        <button class="lg-btn ${isPris ? 'lg-btn-glass' : 'lg-btn-primary'}" style="min-height:36px;padding:8px 12px;font-size:12px;" ${isPris ? 'disabled' : `onclick="validateMeal('${x.firestoreId}')"`}>
           ${isPris ? '✓ Validé' : 'Valider >'}
         </button>
       </div>`;
     });
-    list.innerHTML = html || '<div class="lg-empty">Aucun nom ne correspond.</div>';
+    list.innerHTML = html || '<div class="lg-empty">Aucun résultat.</div>';
   };
+  
+  document.getElementById('ptg-date')?.addEventListener('change', renderPointageList);
+  document.getElementById('ptg-repas')?.addEventListener('change', renderPointageList);
+  document.getElementById('ptg-search')?.addEventListener('input', renderPointageList);
+
   window.validateMeal = function(id) {
     db.collection('reservations').doc(id).update({ status: 'pris', valideLe: new Date().toISOString() })
-      .then(() => {
-        toast('Repas validé !');
-        // Re-render list to show it as Validated, but don't navigate away
-      }).catch(err => toast('Erreur validation', true));
+      .then(() => toast('Repas validé !'))
+      .catch(err => toast('Erreur validation', true));
   };
   
   /* ── ÉVALUATION A POSTERIORI ── */
