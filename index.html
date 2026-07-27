@@ -469,20 +469,35 @@
     {k:'sulfites',l:'Sulfites',e:'🍷'},{k:'lupin',l:'Lupin',e:'🌱'},
   ];
 
-  /* ── Menus PDF : stockage local uniquement (trop volumineux pour Firestore) ── */
+  /* ── Menus PDF : synchronisation Firebase (découpé en morceaux pour la limite 1Mo) ── */
   function loadMenus() {
-    try {
-      const raw = localStorage.getItem(LS_MENU_KEY);
-      if (raw) menusByWeek = JSON.parse(raw);
-    } catch(e) { console.warn('Erreur chargement menus', e); }
+    db.collection('menus_meta').onSnapshot(snapshot => {
+      snapshot.docChanges().forEach(async (change) => {
+        const key = change.doc.id;
+        if (change.type === 'added' || change.type === 'modified') {
+          const data = change.doc.data();
+          let dataUrl = '';
+          try {
+            for (let i = 0; i < data.chunksCount; i++) {
+              const chunkDoc = await db.collection('menus_chunks').doc(`${key}_${i}`).get();
+              if (chunkDoc.exists) dataUrl += chunkDoc.data().data;
+            }
+            menusByWeek[key] = { name: data.name, dataUrl: dataUrl, addedAt: data.addedAt };
+            renderMenuViewer();
+            updateStorageInfo();
+          } catch(err) {
+            console.error('Erreur chargement menu', err);
+          }
+        }
+        if (change.type === 'removed') {
+           delete menusByWeek[key];
+           renderMenuViewer();
+           updateStorageInfo();
+        }
+      });
+    });
   }
-  function saveMenus() {
-    try {
-      localStorage.setItem(LS_MENU_KEY, JSON.stringify(menusByWeek));
-    } catch(e) {
-      toast('⚠️ Stockage PDF plein. Retirez les anciens menus.', true);
-    }
-  }
+  function saveMenus() { /* obsolète, remplacé par Firebase */ }
 
   /* ── Synchronisation temps réel via Firestore ── */
   function setupRealtimeSync() {
@@ -787,20 +802,48 @@
   function handlePDF(file){
     if(file.type!=='application/pdf'){ toast('Le fichier doit être un PDF',true); return; }
     if(file.size>4*1024*1024){ toast('PDF trop volumineux (max 4 Mo)',true); return; }
+    toast('⏳ Envoi du menu...');
     const reader=new FileReader();
-    reader.onload=e=>{
+    reader.onload=async e=>{
       const key=weekKey(currentWeekMonday);
-      menusByWeek[key]={ name:file.name, dataUrl:e.target.result, addedAt:new Date().toISOString() };
-      saveMenus(); renderMenuViewer();
-      toast('✓ Menu ajouté');
+      const dataUrl = e.target.result;
+      const chunkSize = 700000;
+      const chunksCount = Math.ceil(dataUrl.length / chunkSize);
+      try {
+        const batch = db.batch();
+        batch.set(db.collection('menus_meta').doc(key), { name: file.name, addedAt: new Date().toISOString(), chunksCount: chunksCount });
+        for(let i=0; i<chunksCount; i++) {
+          batch.set(db.collection('menus_chunks').doc(`${key}_${i}`), { data: dataUrl.substring(i*chunkSize, (i+1)*chunkSize) });
+        }
+        await batch.commit();
+        toast('✓ Menu ajouté et synchronisé');
+      } catch(err) {
+        console.error(err);
+        if(err.code === 'permission-denied') toast('⚠️ Accès refusé pour envoyer le menu', true);
+        else toast('⚠️ Erreur d\'envoi du menu', true);
+      }
     };
     reader.readAsDataURL(file);
   }
-  window.removeMenu=function(){
+  window.removeMenu=async function(){
     const key=weekKey(currentWeekMonday);
     if(!menusByWeek[key])return;
-    if(!confirm('Retirer le menu ?'))return;
-    delete menusByWeek[key]; saveMenus(); renderMenuViewer(); toast('Menu supprimé');
+    if(!confirm('Retirer le menu (suppression de tous les appareils) ?'))return;
+    toast('⏳ Suppression...');
+    try {
+      const metaDoc = await db.collection('menus_meta').doc(key).get();
+      if(metaDoc.exists) {
+        const count = metaDoc.data().chunksCount;
+        const batch = db.batch();
+        batch.delete(db.collection('menus_meta').doc(key));
+        for(let i=0; i<count; i++) batch.delete(db.collection('menus_chunks').doc(`${key}_${i}`));
+        await batch.commit();
+      }
+      toast('✓ Menu supprimé');
+    } catch(err) {
+      console.error(err);
+      toast('⚠️ Erreur suppression', true);
+    }
   };
   window.downloadMenu=function(){
     const key=weekKey(currentWeekMonday);
@@ -1148,8 +1191,21 @@
           const ref=db.collection('reservations').doc();
           batch.set(ref,{...rData, createdAt:rData.createdAt||new Date().toISOString()});
         });
-        batch.commit().then(()=>{
-          if(data.menusByWeek){ menusByWeek={...menusByWeek,...data.menusByWeek}; saveMenus(); }
+        batch.commit().then(async ()=>{
+          if(data.menusByWeek) {
+            for(const [key, menu] of Object.entries(data.menusByWeek)) {
+              if(!menusByWeek[key]) {
+                const chunkSize = 700000;
+                const chunksCount = Math.ceil(menu.dataUrl.length / chunkSize);
+                const mBatch = db.batch();
+                mBatch.set(db.collection('menus_meta').doc(key), { name: menu.name, addedAt: menu.addedAt||new Date().toISOString(), chunksCount: chunksCount });
+                for(let i=0; i<chunksCount; i++) {
+                  mBatch.set(db.collection('menus_chunks').doc(`${key}_${i}`), { data: menu.dataUrl.substring(i*chunkSize, (i+1)*chunkSize) });
+                }
+                await mBatch.commit();
+              }
+            }
+          }
           toast(`✓ ${data.reservations.length} réservation(s) importées`);
           updateStorageInfo();
         }).catch(err=>{
@@ -1190,8 +1246,8 @@
     const menuCount=Object.keys(menusByWeek).length;
     const el=document.getElementById('storage-info');
     if(el) el.innerHTML=
-      `<strong>${reservations.length}</strong> réservation(s) stockées dans le système · <strong>${menuCount}</strong> menu(s) PDF en local.<br>
-       <span style="font-size:11px;color:#6b7280;">Les PDFs restent en local (trop volumineux pour la synchronisation cloud).</span>`;
+      `<strong>${reservations.length}</strong> réservation(s) stockées dans le système · <strong>${menuCount}</strong> menu(s) PDF synchronisé(s).<br>
+       <span style="font-size:11px;color:#10b981;">Les menus sont désormais synchronisés dans le cloud sur tous vos appareils.</span>`;
   }
 
   /* ── Initialisation ── */
@@ -1204,3 +1260,4 @@
 </script>
 </body>
 </html>
+
