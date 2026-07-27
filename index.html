@@ -92,7 +92,7 @@
   .allergene-chip.selected { background:linear-gradient(135deg,#f97316,#ec4899); color:white; box-shadow:0 4px 14px rgba(236,72,153,0.4); border-color:transparent; }
   .pdf-drop { border:2px dashed rgba(139,92,246,0.4); border-radius:16px; padding:28px 18px; text-align:center; background:rgba(255,255,255,0.35); color:#6b21a8; cursor:pointer; transition:all 0.2s; }
   .pdf-drop.dragover { background:rgba(139,92,246,0.15); border-color:#ec4899; }
-  .pdf-viewer { width:100%; height:65vh; min-height:400px; border-radius:14px; border:1px solid rgba(255,255,255,0.7); background:white; }
+  .pdf-viewer { width:100%; height:80vh; min-height:500px; max-height:85vh; border-radius:14px; border:1px solid rgba(255,255,255,0.7); background:white; }
   .sync-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#10b981; margin-right:5px; animation:pulse-dot 2s infinite; }
   @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1);} 50%{opacity:0.5;transform:scale(0.8);} }
   @keyframes floatBlob { 0%,100%{transform:translate(0,0) scale(1);} 33%{transform:translate(30px,-50px) scale(1.1);} 66%{transform:translate(-20px,20px) scale(0.9);} }
@@ -141,12 +141,12 @@
     </div>
     <div class="lg-tabs">
       <button class="lg-tab active" data-tab="reserver">➕ Réserver</button>
+      <button class="lg-tab" data-tab="menu">🍽️ Menu</button>
       <button class="lg-tab" data-tab="semaine">📅 Semaine</button>
       <button class="lg-tab" data-tab="cuisine">🧑‍🍳 Cuisine</button>
       <button class="lg-tab" data-tab="pointage">✔️ Pointage</button>
       <button class="lg-tab" data-tab="avis">⭐ Avis</button>
       <button class="lg-tab" data-tab="stats">📈 Stats</button>
-      <button class="lg-tab" data-tab="menu">🍽️ Menu</button>
       <button class="lg-tab" data-tab="allergene">⚠️ Allergènes</button>
       <button class="lg-tab" data-tab="export">📊 Export</button>
       <button class="lg-tab" data-tab="sauvegarde">💾 Data</button>
@@ -167,8 +167,7 @@
             <div class="lg-field"><label>Prénom <span class="req">*</span></label><input type="text" class="lg-input" id="prenom" required placeholder="Jean" /></div>
             <div class="lg-field"><label>Type de repas <span class="req">*</span></label>
               <select class="lg-select" id="type-repas" required>
-                <option value="">-- Choisir --</option>
-                <option>Petit-déjeuner</option><option>Déjeuner</option><option>Dîner</option><option>Collation</option>
+                <option value="Déjeuner" selected>Déjeuner</option>
               </select></div>
             <div class="lg-field"><label>Catégorie <span class="req">*</span></label>
               <select class="lg-select" id="categorie" required>
@@ -182,22 +181,6 @@
               </select></div>
             <div class="lg-field" id="autre-regime-field" style="display:none;"><label>Précision (Régime)</label><input type="text" class="lg-input" id="autre-regime" placeholder="Sans gluten..." /></div>
             
-            <div class="lg-field"><label>Texture <span class="req">*</span></label>
-              <select class="lg-select" id="texture" required>
-                <option value="Normale">Normale</option>
-                <option value="Haché">Haché</option>
-                <option value="Mixé">Mixé</option>
-                <option value="Lisse">Lisse / Liquide</option>
-              </select></div>
-              
-            <div class="lg-field"><label>Lieu <span class="req">*</span></label>
-              <select class="lg-select" id="lieu" required>
-                <option value="Salle à manger">Salle à manger</option>
-                <option value="En chambre">En chambre</option>
-                <option value="Autre">Autre (préciser)</option>
-              </select></div>
-              
-            <div class="lg-field"><label>Service / Précision lieu</label><input type="text" class="lg-input" id="service" placeholder="Ch. 214, Unité..." /></div>
             <div class="lg-field"><label>Observations</label><input type="text" class="lg-input" id="observations" placeholder="Note pour la cuisine" /></div>
           </div>
           <div class="lg-field" style="margin-top:12px;">
@@ -243,7 +226,7 @@
           <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="live-date" /></div>
           <div class="lg-field"><label>Repas en cours</label>
             <select class="lg-select" id="live-repas">
-              <option>Petit-déjeuner</option><option selected>Déjeuner</option><option>Dîner</option><option>Collation</option>
+              <option value="Déjeuner" selected>Déjeuner</option>
             </select>
           </div>
         </div>
@@ -264,7 +247,7 @@
           <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="ptg-date" /></div>
           <div class="lg-field"><label>Repas en cours</label>
             <select class="lg-select" id="ptg-repas">
-              <option>Petit-déjeuner</option><option selected>Déjeuner</option><option>Dîner</option><option>Collation</option>
+              <option value="Déjeuner" selected>Déjeuner</option>
             </select>
           </div>
         </div>
@@ -281,7 +264,7 @@
           <div class="lg-field"><label>Date de service</label><input type="date" class="lg-input" id="avis-date" /></div>
           <div class="lg-field"><label>Repas évalué</label>
             <select class="lg-select" id="avis-repas">
-              <option>Petit-déjeuner</option><option selected>Déjeuner</option><option>Dîner</option><option>Collation</option>
+              <option value="Déjeuner" selected>Déjeuner</option>
             </select>
           </div>
         </div>
@@ -692,9 +675,9 @@
       categorie:document.getElementById('categorie').value,
       regime:regimeVal,
       regimeDetail:regimeVal==='Autre'?document.getElementById('autre-regime').value.trim():'',
-      texture:document.getElementById('texture').value,
-      lieu:document.getElementById('lieu').value,
-      service:document.getElementById('service').value.trim(),
+      texture:'Normale',
+      lieu:'Salle à manger',
+      service:'',
       observations:document.getElementById('observations').value.trim(),
       allergenes:[...formAllergenes],
     };
@@ -749,7 +732,7 @@
     filtered.sort((a,b)=>(a.date+a.typeRepas).localeCompare(b.date+b.typeRepas));
     const bReg={'Standard':'b-standard','Sans porc':'b-sansporc','Végétarien':'b-vege','Autre':'b-autre'};
     const bCat={'Salarié':'b-salarie','Invité':'b-invite','Résident':'b-resident','Famille':'b-famille'};
-    let html='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>Nom</th><th>Cat/Lieu</th><th>Rég./Tex.</th><th>État</th><th>Allerg.</th><th></th></tr></thead><tbody>';
+    let html='<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>Nom</th><th>Catégorie</th><th>Régime</th><th>État</th><th>Allerg.</th><th></th></tr></thead><tbody>';
     filtered.forEach(r=>{
       const d=new Date(r.date+'T00:00:00');
       const alg=(r.allergenes||[]).map(k=>{const a=ALLERGENES.find(x=>x.k===k); return a?a.e:'';}).join(' ');
@@ -758,12 +741,10 @@
         <td><strong>${dayNames[(d.getDay()+6)%7]}</strong> ${d.getDate()}/${d.getMonth()+1}</td>
         <td>${r.typeRepas}</td><td><strong>${r.nom}</strong> ${r.prenom}</td>
         <td>
-          <span class="lg-badge ${bCat[r.categorie]||''}">${r.categorie}</span><br>
-          <span style="font-size:10px;color:#6b21a8;margin-top:2px;display:inline-block;">${r.lieu||'Salle'}${r.service?' ('+r.service+')':''}</span>
+          <span class="lg-badge ${bCat[r.categorie]||''}">${r.categorie}</span>
         </td>
         <td>
-          <span class="lg-badge ${bReg[r.regime]||''}">${r.regime}${r.regimeDetail?' · '+r.regimeDetail:''}</span><br>
-          <span style="font-size:10px;font-weight:600;color:#9f1239;margin-top:2px;display:inline-block;">${r.texture&&r.texture!=='Normale'?r.texture:''}</span>
+          <span class="lg-badge ${bReg[r.regime]||''}">${r.regime}${r.regimeDetail?' · '+r.regimeDetail:''}</span>
         </td>
         <td><span class="lg-badge ${r.status==='pris'?'b-vege':'b-standard'}">${r.status==='pris'?'✅ Pris':'Commandé'}</span></td>
         <td>${alg||'-'}</td>
@@ -868,7 +849,7 @@
       if(q && !(x.nom.toLowerCase().includes(q) || x.prenom.toLowerCase().includes(q))) return;
       const isPris = x.status === 'pris';
       html += `<div class="res-list-item ${isPris ? 'valid' : ''}">
-        <div><strong>${x.nom}</strong> ${x.prenom}<br><span style="font-size:11px;color:#6b21a8;font-weight:600;">${x.categorie} ${x.lieu?'· '+x.lieu:''}</span></div>
+        <div><strong>${x.nom}</strong> ${x.prenom}<br><span style="font-size:11px;color:#6b21a8;font-weight:600;">${x.categorie}</span></div>
         <button class="lg-btn ${isPris ? 'lg-btn-glass' : 'lg-btn-primary'}" style="min-height:36px;padding:8px 12px;font-size:12px;" ${isPris ? 'disabled' : `onclick="validateMeal('${x.firestoreId}')"`}>
           ${isPris ? '✓ Validé' : 'Valider >'}
         </button>
@@ -920,7 +901,7 @@
       attente.forEach(x => {
         html += `<div class="res-list-item" style="border-left:4px solid #f43f5e;">
           <div><strong>${x.nom}</strong> ${x.prenom}</div>
-          <div style="font-size:11px;color:#6b21a8;font-weight:600;text-align:right;">${x.categorie}<br>${x.lieu||''}</div>
+          <div style="font-size:11px;color:#6b21a8;font-weight:600;text-align:right;">${x.categorie}</div>
         </div>`;
       });
     }
@@ -1260,4 +1241,3 @@
 </script>
 </body>
 </html>
-
