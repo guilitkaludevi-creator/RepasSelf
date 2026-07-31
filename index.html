@@ -301,13 +301,9 @@
 
     <div id="tab-mes-commandes" class="tab-content hidden">
       <div class="lg-card">
-        <h3 style="margin:0 0 12px; color:#6b21a8;">📋 Mes Commandes</h3>
-        <div class="lg-week-picker">
-          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
-          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-mes">—</div><div class="lg-week-range" id="wk-range-mes">—</div></div>
-          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
-        </div>
-        <div class="lg-stats" id="mes-stats-row"></div>
+        <h3 style="margin:0 0 12px; color:#6b21a8;"><span class="anim-emoji float" style="font-size:24px; vertical-align:middle; margin-right:8px;">📦</span> Mes Commandes</h3>
+        <div class="lg-info">Historique complet de toutes vos réservations.</div>
+        <div class="lg-stats" id="mes-stats-row" style="margin-top:14px;"></div>
         <div id="mes-table-container" style="margin-top:14px;"></div>
       </div>
     </div>
@@ -1128,7 +1124,12 @@
     const q = document.getElementById('ptg-search').value.toLowerCase();
     const list = document.getElementById('ptg-list');
     
-    const res = reservations.filter(x => x.date === d && x.typeRepas === r);
+    let res = reservations.filter(x => x.date === d && x.typeRepas === r);
+    // Filtrage pour le salarié : ne voit que ses propres repas
+    if(currentUser && currentUser.role === 'salarie') {
+      res = res.filter(x => x.userId === currentUser.id);
+    }
+    
     if(res.length === 0) { list.innerHTML = '<div class="lg-empty">Aucune réservation pour ce repas.</div>'; return; }
     
     let html = '';
@@ -1450,32 +1451,36 @@
     const stats = document.getElementById('mes-stats-row');
     if(!container || !stats || !currentUser) return;
     
-    const mon = fmt(currentWeekMonday), sun = fmt(addDays(currentWeekMonday, 6));
-    const userRes = reservations.filter(r => r.userId === currentUser.id && r.date >= mon && r.date <= sun);
+    // Historique complet (sans filtre de semaine)
+    const userRes = reservations.filter(r => r.userId === currentUser.id);
     
     const cmd = userRes.length;
     const pris = userRes.filter(r => r.status === 'pris').length;
     
     stats.innerHTML = `
-      <div class="lg-stat"><div class="lg-stat-val">${cmd}</div><div class="lg-stat-lbl">Commandés</div></div>
-      <div class="lg-stat"><div class="lg-stat-val" style="color:#10b981;">${pris}</div><div class="lg-stat-lbl">Pris</div></div>
+      <div class="lg-stat"><div class="lg-stat-val">${cmd}</div><div class="lg-stat-lbl">Total Commandés</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#10b981;">${pris}</div><div class="lg-stat-lbl">Total Pris</div></div>
     `;
     
     if(userRes.length === 0) {
-      container.innerHTML = '<div class="lg-empty">Aucune commande pour cette semaine.</div>';
+      container.innerHTML = '<div class="lg-empty">Aucune commande trouvée dans votre historique.</div>';
       return;
     }
     
-    userRes.sort((a,b) => (a.date+a.typeRepas).localeCompare(b.date+b.typeRepas));
-    let html = '<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>État</th><th>Action</th></tr></thead><tbody>';
+    // Tri par date décroissante
+    userRes.sort((a,b) => b.date.localeCompare(a.date));
+    let html = '<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Date</th><th>Repas</th><th>État</th><th>Action</th></tr></thead><tbody>';
     userRes.forEach(r => {
       const d = new Date(r.date+'T00:00:00');
       const isPris = r.status === 'pris';
+      // Ne permet d'annuler que si la date est dans le futur ou aujourd'hui et non pris
+      const canCancel = !isPris && r.date >= fmt(new Date());
+      
       html += `<tr>
-        <td><strong>${dayNames[(d.getDay()+6)%7]}</strong> ${d.getDate()}/${d.getMonth()+1}</td>
+        <td><strong>${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}</strong></td>
         <td>${r.typeRepas}</td>
         <td><span class="lg-badge ${isPris ? 'b-vege' : 'b-standard'}">${isPris ? '✅ Pris' : 'Commandé'}</span></td>
-        <td>${!isPris ? `<button class="lg-btn lg-btn-danger" style="padding:4px 8px;font-size:10px;min-height:24px;" onclick="window.__delR('${r.firestoreId}')">Annuler</button>` : '-'}</td>
+        <td>${canCancel ? `<button class="lg-btn lg-btn-danger" style="padding:4px 8px;font-size:10px;min-height:24px;" onclick="window.__delR('${r.firestoreId}')">Annuler</button>` : '-'}</td>
       </tr>`;
     });
     html += '</tbody></table></div>';
