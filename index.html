@@ -33,7 +33,8 @@
   .lg-subtitle { font-size:11px; color:#6b21a8; margin-top:2px; font-weight:500; }
   .lg-week-badge { padding:8px 12px; background:rgba(255,255,255,0.55); backdrop-filter:blur(10px); border-radius:12px; border:1px solid rgba(255,255,255,0.7); font-size:11px; font-weight:600; color:#7c3aed; text-align:right; }
   .lg-tabs { display:flex; gap:4px; margin-bottom:16px; padding:6px; background:rgba(255,255,255,0.35); backdrop-filter:blur(20px) saturate(180%); -webkit-backdrop-filter:blur(20px) saturate(180%);
-    border-radius:16px; border:1px solid rgba(255,255,255,0.5); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7); overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    border-radius:16px; border:1px solid rgba(255,255,255,0.5); box-shadow:inset 0 1px 0 rgba(255,255,255,0.7); overflow-x:auto; -webkit-overflow-scrolling:touch; -ms-overflow-style:none; scrollbar-width:none; }
+  .lg-tabs::-webkit-scrollbar { display:none; }
   .lg-tab { flex:1; min-width:80px; padding:10px 6px; border:none; background:transparent; color:#6b21a8; cursor:pointer; font-size:11px; font-weight:600; border-radius:12px; white-space:nowrap; transition:all 0.2s; min-height:40px; }
   .lg-tab.active { background:linear-gradient(135deg,rgba(236,72,153,0.95),rgba(139,92,246,0.95)); color:white; box-shadow:0 4px 16px rgba(139,92,246,0.4), inset 0 1px 0 rgba(255,255,255,0.5); }
   .lg-card { background:rgba(255,255,255,0.45); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
@@ -108,6 +109,32 @@
   #qr-container { display:flex; justify-content:center; align-items:center; margin:20px 0; padding:20px; background:white; border-radius:16px; border:4px solid #8b5cf6; }
   .res-list-item { padding:12px 14px; margin-bottom:8px; border-radius:12px; border:1px solid rgba(255,255,255,0.7); background:rgba(255,255,255,0.6); display:flex; justify-content:space-between; align-items:center; transition:all 0.2s; box-shadow:0 2px 8px rgba(139,92,246,0.05); }
   .res-list-item.valid { border-color:#10b981; background:rgba(16,185,129,0.15); }
+  
+  /* 3D Animated Emojis */
+  @keyframes emojiPop {
+    0% { transform: scale(1) rotate(0deg); filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.2)); }
+    50% { transform: scale(1.3) rotate(8deg); filter: drop-shadow(4px 6px 8px rgba(0,0,0,0.3)); }
+    100% { transform: scale(1.1) rotate(0deg); filter: drop-shadow(2px 3px 4px rgba(0,0,0,0.25)); }
+  }
+  @keyframes emojiFloat {
+    0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.2)); }
+    50% { transform: translateY(-3px) scale(1.1); filter: drop-shadow(3px 5px 6px rgba(0,0,0,0.25)); }
+  }
+  @keyframes emojiPulse {
+    0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(1px 2px 2px rgba(0,0,0,0.2)); }
+    50% { transform: scale(1.15); filter: brightness(1.2) drop-shadow(2px 4px 5px rgba(0,0,0,0.3)); }
+  }
+  .anim-emoji {
+    display: inline-block;
+    filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.2));
+    transition: transform 0.2s;
+  }
+  .lg-tab:hover .anim-emoji, .lg-tab.active .anim-emoji {
+    animation: emojiPop 0.4s ease-out forwards;
+  }
+  .anim-emoji.float { animation: emojiFloat 3s ease-in-out infinite; }
+  .anim-emoji.pulse { animation: emojiPulse 2s ease-in-out infinite; }
+
   
   /* Touch optimizations & smooth active states */
   .lg-btn, .lg-tab, .lg-day-chip, .allergene-chip, .lg-arrow { touch-action: manipulation; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s, box-shadow 0.2s; }
@@ -205,18 +232,18 @@
       <button class="lg-btn lg-btn-danger" style="margin-left:10px; min-height:30px; padding:6px 10px;" onclick="logout()">Déconnexion</button>
     </div>
     <div class="lg-tabs" id="main-tabs">
-      <button class="lg-tab active" data-tab="reserver">➕ Réserver</button>
-      <button class="lg-tab" data-tab="mes-commandes">📋 Mes Commandes</button>
-      <button class="lg-tab" data-tab="menu">🍽️ Menu</button>
-      <button class="lg-tab" data-tab="semaine">📅 Semaine</button>
-      <button class="lg-tab" data-tab="cuisine">🧑‍🍳 Cuisine</button>
-      <button class="lg-tab" data-tab="pointage">✔️ Pointage</button>
-      <button class="lg-tab" data-tab="avis">⭐ Avis</button>
-      <button class="lg-tab" data-tab="stats">📈 Stats</button>
-      <button class="lg-tab" data-tab="allergene">⚠️ Allergènes</button>
-      <button class="lg-tab" data-tab="compta">💶 Comptabilité</button>
-      <button class="lg-tab" data-tab="export">📊 Export</button>
-      <button class="lg-tab" data-tab="sauvegarde">💾 Data</button>
+      <button class="lg-tab active" data-tab="menu"><span class="anim-emoji float">📖</span> Menu</button>
+      <button class="lg-tab" data-tab="reserver"><span class="anim-emoji">🍔</span> Réserver</button>
+      <button class="lg-tab" data-tab="pointage"><span class="anim-emoji">✅</span> Pointage</button>
+      <button class="lg-tab" data-tab="mes-commandes"><span class="anim-emoji float">📦</span> Mes Commandes</button>
+      <button class="lg-tab" data-tab="avis"><span class="anim-emoji pulse">🌟</span> Avis</button>
+      <button class="lg-tab" data-tab="cuisine"><span class="anim-emoji float">🧑‍🍳</span> Cuisine</button>
+      <button class="lg-tab" data-tab="semaine"><span class="anim-emoji">📅</span> Semaine</button>
+      <button class="lg-tab" data-tab="stats"><span class="anim-emoji pulse">📈</span> Stats</button>
+      <button class="lg-tab" data-tab="allergene"><span class="anim-emoji">⚠️</span> Allergènes</button>
+      <button class="lg-tab" data-tab="compta"><span class="anim-emoji float">💶</span> Comptabilité</button>
+      <button class="lg-tab" data-tab="export"><span class="anim-emoji">📊</span> Export</button>
+      <button class="lg-tab" data-tab="sauvegarde"><span class="anim-emoji">💾</span> Data</button>
     </div>
 
     <div id="tab-reserver" class="tab-content">
@@ -397,24 +424,26 @@
 
     <div id="tab-menu" class="tab-content hidden">
       <div class="lg-card">
-        <h3 style="margin:0 0 12px; color:#6b21a8;">🍽️ Menu de la semaine</h3>
+        <h3 style="margin:0 0 12px; color:#6b21a8;"><span class="anim-emoji float" style="font-size:24px; vertical-align:middle; margin-right:8px;">📖</span> Menu de la semaine</h3>
         <div class="lg-week-picker">
           <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
           <div class="lg-week-info"><div class="lg-week-num" id="wk-num-4">—</div><div class="lg-week-range" id="wk-range-4">—</div></div>
           <button class="lg-arrow" onclick="changeWeek(1)">›</button>
         </div>
-        <div class="lg-info">📄 Ajoutez le menu au format PDF pour cette semaine. Il sera affiché ci-dessous et consultable à tout moment.</div>
+        <div class="lg-info">📄 Consultez le menu de la semaine ci-dessous, ou ajoutez-en un nouveau (format PDF).</div>
+        
+        <div id="menu-viewer-wrap" style="margin-bottom:14px;"></div>
+        
         <div class="pdf-drop" id="pdf-drop" onclick="document.getElementById('pdf-input').click()">
-          <div style="font-size:36px;">📎</div>
+          <div style="font-size:36px;" class="anim-emoji float">📎</div>
           <div style="margin-top:6px; font-weight:600;">Cliquer ou glisser un PDF</div>
-          <div style="font-size:11px; opacity:0.7; margin-top:4px;">Menu associé à la semaine sélectionnée</div>
+          <div style="font-size:11px; opacity:0.7; margin-top:4px;">Remplacera le menu associé à la semaine sélectionnée</div>
         </div>
         <input type="file" id="pdf-input" accept="application/pdf" style="display:none" />
-        <div class="lg-btn-row" id="menu-actions" style="display:none;">
+        <div class="lg-btn-row" id="menu-actions" style="display:none; margin-top:14px;">
           <button class="lg-btn lg-btn-glass" onclick="downloadMenu()">⬇️ Télécharger PDF</button>
-          <button class="lg-btn lg-btn-danger" onclick="removeMenu()" style="min-height:44px;padding:12px 18px;font-size:14px;">🗑️ Retirer</button>
+          <button class="lg-btn lg-btn-danger" onclick="removeMenu()" style="min-height:44px;padding:12px 18px;font-size:14px;">🗑️ Retirer le menu</button>
         </div>
-        <div id="menu-viewer-wrap" style="margin-top:14px;"></div>
       </div>
     </div>
 
@@ -584,7 +613,7 @@
 
     const role = currentUser.role;
     if (role === 'salarie') {
-      showTabs(['reserver', 'mes-commandes', 'menu', 'pointage', 'avis']);
+      showTabs(['menu', 'reserver', 'pointage', 'mes-commandes', 'avis']);
       // Pré-remplir le formulaire
       document.getElementById('nom').value = currentUser.nom;
       document.getElementById('prenom').value = currentUser.prenom;
