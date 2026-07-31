@@ -823,7 +823,12 @@
     const yearStart=new Date(Date.UTC(date.getUTCFullYear(),0,1));
     return { week:Math.ceil((((date-yearStart)/86400000)+1)/7), year:date.getUTCFullYear() };
   }
-  const fmt=d=>d.toISOString().split('T')[0];
+  const fmt=d=>{
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
   const fmtFR=s=>{ if(!s)return''; const p=s.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
   const addDays=(d,n)=>{ const r=new Date(d); r.setDate(r.getDate()+n); return r; };
   const weekKey=d=>{ const i=getISOWeek(d); return `${i.year}-W${String(i.week).padStart(2,'0')}`; };
