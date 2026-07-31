@@ -130,7 +130,71 @@
 <div class="lg-blob b1"></div>
 <div class="lg-blob b2"></div>
 <div class="lg-blob b3"></div>
-<div class="lg-app">
+
+<!-- Auth Overlay -->
+<div class="lg-app" id="auth-app">
+  <div class="lg-content">
+    <div class="lg-header" style="justify-content:center;">
+      <h1 class="lg-title">✨ Résa Repas</h1>
+    </div>
+    
+    <div id="login-view">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">Connexion</h3>
+        <form id="login-form">
+          <div class="lg-form-grid" style="grid-template-columns:1fr;">
+            <div class="lg-field"><label>Identifiant (ex: prenom.nom)</label><input type="text" class="lg-input" id="login-id" required /></div>
+            <div class="lg-field"><label>Code secret (PIN numérique)</label><input type="password" class="lg-input" id="login-pin" inputmode="numeric" pattern="[0-9]*" required /></div>
+          </div>
+          <div class="lg-btn-row">
+            <button type="submit" class="lg-btn lg-btn-primary" style="width:100%;">Se connecter</button>
+          </div>
+        </form>
+        <div style="text-align:center; margin-top:16px;">
+          <button class="lg-btn lg-btn-glass" onclick="toggleAuthView('register')" style="width:100%;">Créer un compte Salarié</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="register-view" style="display:none;">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">Créer un compte</h3>
+        <form id="register-form">
+          <div class="lg-form-grid">
+            <div class="lg-field"><label>Nom <span class="req">*</span></label><input type="text" class="lg-input" id="reg-nom" required /></div>
+            <div class="lg-field"><label>Prénom <span class="req">*</span></label><input type="text" class="lg-input" id="reg-prenom" required /></div>
+            <div class="lg-field"><label>Identifiant (ex: prenom.nom) <span class="req">*</span></label><input type="text" class="lg-input" id="reg-id" required /></div>
+            <div class="lg-field"><label>Code PIN (chiffres) <span class="req">*</span></label><input type="password" class="lg-input" id="reg-pin" inputmode="numeric" pattern="[0-9]*" required /></div>
+            
+            <div class="lg-field"><label>Catégorie</label>
+              <select class="lg-select" id="reg-cat" required>
+                <option value="Salarié" selected>Salarié</option>
+              </select>
+            </div>
+            <div class="lg-field"><label>Rôle</label>
+              <select class="lg-select" id="reg-role" required disabled>
+                <option value="salarie" selected>Salarié</option>
+                <option value="cuisinier">Cuisinier</option>
+                <option value="qualite">Qualité</option>
+                <option value="comptable">Comptable</option>
+              </select>
+            </div>
+          </div>
+          <div class="lg-field" style="margin-top:10px;">
+            <label>Code admin (optionnel, pour rôles spécifiques)</label>
+            <input type="password" class="lg-input" id="reg-admin-code" placeholder="Code secret" oninput="checkAdminCode()" />
+          </div>
+          <div class="lg-btn-row">
+            <button type="submit" class="lg-btn lg-btn-primary" style="flex:1;">S'inscrire</button>
+            <button type="button" class="lg-btn lg-btn-glass" onclick="toggleAuthView('login')">Annuler</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="lg-app" id="main-app" style="display:none;">
   <div class="lg-content">
     <div class="lg-header">
       <div>
@@ -138,9 +202,11 @@
         <div class="lg-subtitle">Centre de Santé · hebdomadaire</div>
       </div>
       <div class="lg-week-badge" id="header-week">Semaine —</div>
+      <button class="lg-btn lg-btn-danger" style="margin-left:10px; min-height:30px; padding:6px 10px;" onclick="logout()">Déconnexion</button>
     </div>
-    <div class="lg-tabs">
+    <div class="lg-tabs" id="main-tabs">
       <button class="lg-tab active" data-tab="reserver">➕ Réserver</button>
+      <button class="lg-tab" data-tab="mes-commandes">📋 Mes Commandes</button>
       <button class="lg-tab" data-tab="menu">🍽️ Menu</button>
       <button class="lg-tab" data-tab="semaine">📅 Semaine</button>
       <button class="lg-tab" data-tab="cuisine">🧑‍🍳 Cuisine</button>
@@ -148,6 +214,7 @@
       <button class="lg-tab" data-tab="avis">⭐ Avis</button>
       <button class="lg-tab" data-tab="stats">📈 Stats</button>
       <button class="lg-tab" data-tab="allergene">⚠️ Allergènes</button>
+      <button class="lg-tab" data-tab="compta">💶 Comptabilité</button>
       <button class="lg-tab" data-tab="export">📊 Export</button>
       <button class="lg-tab" data-tab="sauvegarde">💾 Data</button>
     </div>
@@ -187,11 +254,34 @@
             <label>⚠️ Allergènes</label>
             <div class="allergene-grid" id="alg-form-grid" style="margin-top:6px;"></div>
           </div>
+          <div class="lg-field" style="margin-top:12px;" id="recurrence-section">
+            <label>🔁 Récurrence (Optionnel)</label>
+            <select class="lg-select" id="recurrence-weeks">
+              <option value="0">Aucune (cette semaine uniquement)</option>
+              <option value="1">Répéter sur la semaine prochaine (1 sem)</option>
+              <option value="2">Répéter sur 2 semaines supplémentaires</option>
+              <option value="3">Répéter sur 3 semaines supplémentaires</option>
+              <option value="4">Répéter sur 4 semaines supplémentaires</option>
+            </select>
+          </div>
           <div class="lg-btn-row">
             <button type="submit" class="lg-btn lg-btn-primary">✓ Valider</button>
             <button type="reset" class="lg-btn lg-btn-glass">Effacer</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <div id="tab-mes-commandes" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">📋 Mes Commandes</h3>
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-mes">—</div><div class="lg-week-range" id="wk-range-mes">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-stats" id="mes-stats-row"></div>
+        <div id="mes-table-container" style="margin-top:14px;"></div>
       </div>
     </div>
 
@@ -342,6 +432,22 @@
       </div>
     </div>
 
+    <div id="tab-compta" class="tab-content hidden">
+      <div class="lg-card">
+        <h3 style="margin:0 0 12px; color:#6b21a8;">💶 Comptabilité & Facturation</h3>
+        <div class="lg-info">Décompte exact du nombre de repas commandés vs pointés par personne pour la semaine sélectionnée.</div>
+        <div class="lg-week-picker">
+          <button class="lg-arrow" onclick="changeWeek(-1)">‹</button>
+          <div class="lg-week-info"><div class="lg-week-num" id="wk-num-compta">—</div><div class="lg-week-range" id="wk-range-compta">—</div></div>
+          <button class="lg-arrow" onclick="changeWeek(1)">›</button>
+        </div>
+        <div class="lg-btn-row" style="margin-bottom:14px;">
+          <button class="lg-btn lg-btn-primary" onclick="exportComptaExcel()">📗 Exporter Décompte (Excel)</button>
+        </div>
+        <div id="compta-table-container"></div>
+      </div>
+    </div>
+
     <div id="tab-export" class="tab-content hidden">
       <div class="lg-card">
         <h3 style="margin:0 0 12px; color:#6b21a8;">📤 Export cuisine (semaine)</h3>
@@ -431,6 +537,8 @@
 <!-- Application principale -->
 <script>
 (function(){
+  let currentUser = null;
+  const LS_USER_KEY = 'resaRepas_user';
   const LS_MENU_KEY = 'resaRepas_menus_v1';
   let reservations = [];
   let feedbacks = [];
@@ -441,6 +549,139 @@
   let syncActive = false;
   
   let currentValId = null;
+
+  /* ── Authentification ── */
+  window.toggleAuthView = function(view) {
+    document.getElementById('login-view').style.display = view === 'login' ? 'block' : 'none';
+    document.getElementById('register-view').style.display = view === 'register' ? 'block' : 'none';
+  };
+
+  window.checkAdminCode = function() {
+    const code = document.getElementById('reg-admin-code').value;
+    const roleSelect = document.getElementById('reg-role');
+    if (code === '9999') {
+      roleSelect.disabled = false;
+      toast('✅ Mode Création Avancée débloqué');
+    } else {
+      roleSelect.disabled = true;
+      roleSelect.value = 'salarie';
+    }
+  };
+
+  function applyRoleUI() {
+    if (!currentUser) return;
+    
+    // Configurer le menu "Tabs" selon le rôle
+    const tabs = document.querySelectorAll('#main-tabs .lg-tab');
+    tabs.forEach(t => t.style.display = 'none'); // Cacher tout par défaut
+    
+    const showTabs = (tabNames) => {
+      tabNames.forEach(name => {
+        const t = document.querySelector(`.lg-tab[data-tab="${name}"]`);
+        if (t) t.style.display = 'block';
+      });
+    };
+
+    const role = currentUser.role;
+    if (role === 'salarie') {
+      showTabs(['reserver', 'mes-commandes', 'menu', 'pointage', 'avis']);
+      // Pré-remplir le formulaire
+      document.getElementById('nom').value = currentUser.nom;
+      document.getElementById('prenom').value = currentUser.prenom;
+      document.getElementById('categorie').value = currentUser.categorie || 'Salarié';
+      document.getElementById('nom').readOnly = true;
+      document.getElementById('prenom').readOnly = true;
+      document.getElementById('categorie').disabled = true;
+    } else if (role === 'cuisinier') {
+      showTabs(['cuisine', 'pointage', 'menu', 'allergene']);
+    } else if (role === 'qualite') {
+      showTabs(['semaine', 'stats', 'export', 'allergene', 'avis']);
+    } else if (role === 'comptable') {
+      showTabs(['compta', 'export', 'stats']);
+    } else if (role === 'admin') {
+      tabs.forEach(t => t.style.display = 'block');
+    }
+    
+    // Activer le premier onglet visible
+    const firstVisible = document.querySelector('#main-tabs .lg-tab[style*="display: block"]');
+    if (firstVisible) firstVisible.click();
+    
+    // Update header
+    document.querySelector('.lg-subtitle').innerHTML = `Connecté en tant que <strong>${currentUser.prenom} ${currentUser.nom}</strong> (${role})`;
+  }
+
+  window.logout = function() {
+    localStorage.removeItem(LS_USER_KEY);
+    currentUser = null;
+    document.getElementById('main-app').style.display = 'none';
+    document.getElementById('auth-app').style.display = 'block';
+    document.getElementById('login-form').reset();
+  };
+
+  document.getElementById('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = document.getElementById('login-id').value.trim().toLowerCase();
+    const pin = document.getElementById('login-pin').value.trim();
+    toast('⏳ Connexion...');
+    try {
+      const doc = await db.collection('users').doc(id).get();
+      if (doc.exists) {
+        const u = doc.data();
+        if (u.pin === pin) {
+          currentUser = { id: doc.id, ...u };
+          localStorage.setItem(LS_USER_KEY, JSON.stringify(currentUser));
+          toast('✅ Bienvenue ' + u.prenom);
+          document.getElementById('auth-app').style.display = 'none';
+          document.getElementById('main-app').style.display = 'block';
+          applyRoleUI();
+        } else {
+          toast('⚠️ Code PIN incorrect', true);
+        }
+      } else {
+        toast('⚠️ Identifiant introuvable', true);
+      }
+    } catch(err) {
+      console.error(err);
+      toast('Erreur de connexion', true);
+    }
+  });
+
+  document.getElementById('register-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const id = document.getElementById('reg-id').value.trim().toLowerCase();
+    const pin = document.getElementById('reg-pin').value.trim();
+    const nom = document.getElementById('reg-nom').value.trim().toUpperCase();
+    const prenom = document.getElementById('reg-prenom').value.trim();
+    const role = document.getElementById('reg-role').value;
+    const cat = document.getElementById('reg-cat').value;
+    
+    toast('⏳ Inscription...');
+    try {
+      const doc = await db.collection('users').doc(id).get();
+      if (doc.exists) {
+        toast('⚠️ Cet identifiant existe déjà', true);
+        return;
+      }
+      const newUser = { pin, nom, prenom, role, categorie: cat, createdAt: new Date().toISOString() };
+      await db.collection('users').doc(id).set(newUser);
+      toast('✅ Compte créé avec succès ! Connectez-vous.');
+      toggleAuthView('login');
+      document.getElementById('login-id').value = id;
+    } catch(err) {
+      console.error(err);
+      toast('Erreur lors de la création', true);
+    }
+  });
+
+  function checkSession() {
+    const saved = localStorage.getItem(LS_USER_KEY);
+    if (saved) {
+      currentUser = JSON.parse(saved);
+      document.getElementById('auth-app').style.display = 'none';
+      document.getElementById('main-app').style.display = 'block';
+      applyRoleUI();
+    }
+  }
 
   const ALLERGENES = [
     {k:'gluten',l:'Gluten',e:'🌾'},{k:'lactose',l:'Lactose',e:'🥛'},
@@ -648,6 +889,8 @@
       if(btn.dataset.tab === 'pointage') renderPointageList();
       if(btn.dataset.tab === 'cuisine') renderCuisineLive();
       if(btn.dataset.tab === 'avis') renderAvisList();
+      if(btn.dataset.tab === 'mes-commandes') renderMesCommandes();
+      if(btn.dataset.tab === 'compta') renderComptaList();
       renderWeekPickers();
     });
   });
@@ -663,7 +906,6 @@
     document.getElementById('autre-regime-field').style.display=e.target.value==='Autre'?'flex':'none';
   });
 
-  /* ── Soumission du formulaire → écriture dans Firestore ── */
   document.getElementById('reservation-form').addEventListener('submit',e=>{
     e.preventDefault();
     if(selectedDays.size===0){ toast('⚠️ Sélectionnez au moins un jour',true); return; }
@@ -680,22 +922,38 @@
       service:'',
       observations:document.getElementById('observations').value.trim(),
       allergenes:[...formAllergenes],
+      userId: currentUser ? currentUser.id : null
     };
     const days=[...selectedDays].sort();
+    const recurrence = parseInt(document.getElementById('recurrence-weeks')?.value || '0', 10);
     
-    const promises=days.map(date=>
+    let allDatesToBook = [];
+    for(let w=0; w<=recurrence; w++) {
+      days.forEach(dateStr => {
+        const dObj = new Date(dateStr+'T00:00:00');
+        const nextDObj = addDays(dObj, w*7);
+        allDatesToBook.push(fmt(nextDObj));
+      });
+    }
+
+    const promises = allDatesToBook.map(date=>
       db.collection('reservations').add({ date, ...base, createdAt: new Date().toISOString() })
     );
     
-    // Note: Avec enablePersistence, cette promesse est résolue localement immédiatement
     Promise.all(promises)
-      .then(()=>toast(`✓ ${days.length} réservation(s) pour ${base.prenom} ${base.nom}`))
+      .then(()=>toast(`✓ ${promises.length} réservation(s) confirmée(s)`))
       .catch((err)=>{
           console.error(err);
           toast('⚠️ Erreur lors de l\'enregistrement', true);
       });
       
-    document.getElementById('reservation-form').reset();
+    // Si salarié, on reset juste les jours, pas le nom/prénom
+    if(currentUser && currentUser.role === 'salarie') {
+      document.getElementById('observations').value = '';
+      document.getElementById('autre-regime').value = '';
+    } else {
+      document.getElementById('reservation-form').reset();
+    }
     document.getElementById('autre-regime-field').style.display='none';
     selectedDays.clear(); formAllergenes.clear();
     renderDaysGrid(); renderAllergeneFormGrid();
@@ -1157,6 +1415,109 @@
     toast('✓ Sauvegarde JSON téléchargée');
   };
 
+  /* ── MES COMMANDES (Salarié) ── */
+  window.renderMesCommandes = function() {
+    const container = document.getElementById('mes-table-container');
+    const stats = document.getElementById('mes-stats-row');
+    if(!container || !stats || !currentUser) return;
+    
+    const mon = fmt(currentWeekMonday), sun = fmt(addDays(currentWeekMonday, 6));
+    const userRes = reservations.filter(r => r.userId === currentUser.id && r.date >= mon && r.date <= sun);
+    
+    const cmd = userRes.length;
+    const pris = userRes.filter(r => r.status === 'pris').length;
+    
+    stats.innerHTML = `
+      <div class="lg-stat"><div class="lg-stat-val">${cmd}</div><div class="lg-stat-lbl">Commandés</div></div>
+      <div class="lg-stat"><div class="lg-stat-val" style="color:#10b981;">${pris}</div><div class="lg-stat-lbl">Pris</div></div>
+    `;
+    
+    if(userRes.length === 0) {
+      container.innerHTML = '<div class="lg-empty">Aucune commande pour cette semaine.</div>';
+      return;
+    }
+    
+    userRes.sort((a,b) => (a.date+a.typeRepas).localeCompare(b.date+b.typeRepas));
+    let html = '<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Jour</th><th>Repas</th><th>État</th><th>Action</th></tr></thead><tbody>';
+    userRes.forEach(r => {
+      const d = new Date(r.date+'T00:00:00');
+      const isPris = r.status === 'pris';
+      html += `<tr>
+        <td><strong>${dayNames[(d.getDay()+6)%7]}</strong> ${d.getDate()}/${d.getMonth()+1}</td>
+        <td>${r.typeRepas}</td>
+        <td><span class="lg-badge ${isPris ? 'b-vege' : 'b-standard'}">${isPris ? '✅ Pris' : 'Commandé'}</span></td>
+        <td>${!isPris ? `<button class="lg-btn lg-btn-danger" style="padding:4px 8px;font-size:10px;min-height:24px;" onclick="window.__delR('${r.firestoreId}')">Annuler</button>` : '-'}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  };
+
+  /* ── COMPTABILITE ── */
+  window.renderComptaList = function() {
+    const container = document.getElementById('compta-table-container');
+    if(!container) return;
+    const mon = fmt(currentWeekMonday), sun = fmt(addDays(currentWeekMonday, 6));
+    const weekRes = reservations.filter(r => r.date >= mon && r.date <= sun);
+    
+    if(weekRes.length === 0) {
+      container.innerHTML = '<div class="lg-empty">Aucune réservation sur cette semaine.</div>';
+      return;
+    }
+
+    const recap = {};
+    weekRes.forEach(r => {
+      const key = (r.userId || r.nom + ' ' + r.prenom).toUpperCase();
+      if(!recap[key]) {
+        recap[key] = { nom: r.nom, prenom: r.prenom, cat: r.categorie, cmd: 0, pris: 0 };
+      }
+      recap[key].cmd++;
+      if(r.status === 'pris') recap[key].pris++;
+    });
+
+    let html = '<div class="lg-table-wrap"><table class="lg-table"><thead><tr><th>Nom Prénom</th><th>Catégorie</th><th>Commandés</th><th>Pris (Pointés)</th><th>Écart</th></tr></thead><tbody>';
+    Object.values(recap).sort((a,b) => a.nom.localeCompare(b.nom)).forEach(r => {
+      const ecart = r.cmd - r.pris;
+      html += `<tr>
+        <td><strong>${r.nom}</strong> ${r.prenom}</td>
+        <td>${r.cat}</td>
+        <td>${r.cmd}</td>
+        <td style="color:#10b981;font-weight:700;">${r.pris}</td>
+        <td style="color:${ecart > 0 ? '#f43f5e' : '#10b981'};font-weight:600;">${ecart}</td>
+      </tr>`;
+    });
+    html += '</tbody></table></div>';
+    container.innerHTML = html;
+  };
+
+  window.exportComptaExcel = function() {
+    const mon = fmt(currentWeekMonday), sun = fmt(addDays(currentWeekMonday, 6));
+    const iso = getISOWeek(currentWeekMonday);
+    const weekRes = reservations.filter(r => r.date >= mon && r.date <= sun);
+    
+    if(weekRes.length === 0) { toast('Aucune donnée à exporter', true); return; }
+
+    const recap = {};
+    weekRes.forEach(r => {
+      const key = (r.userId || r.nom + ' ' + r.prenom).toUpperCase();
+      if(!recap[key]) {
+        recap[key] = { Nom: r.nom, Prénom: r.prenom, Catégorie: r.categorie, 'Commandés': 0, 'Pris (Pointés)': 0, 'Écart': 0 };
+      }
+      recap[key]['Commandés']++;
+      if(r.status === 'pris') recap[key]['Pris (Pointés)']++;
+    });
+
+    Object.values(recap).forEach(r => r['Écart'] = r['Commandés'] - r['Pris (Pointés)']);
+    
+    const rows = Object.values(recap).sort((a,b) => a.Nom.localeCompare(b.Nom));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws['!cols'] = [{wch:15},{wch:15},{wch:15},{wch:12},{wch:15},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws, 'Compta S'+iso.week);
+    XLSX.writeFile(wb, `comptabilite_S${String(iso.week).padStart(2,'0')}_${iso.year}.xlsx`);
+    toast('✓ Fichier Comptabilité exporté');
+  };
+
   document.getElementById('import-file').addEventListener('change',e=>{
     const file=e.target.files[0]; if(!file)return;
     const reader=new FileReader();
@@ -1237,6 +1598,7 @@
   renderAllergeneFormGrid();
   renderWeekPickers();
   updateStorageInfo();
+  checkSession();
 })();
 </script>
 </body>
